@@ -9,8 +9,8 @@ class User(Base):
     #Definición de las columnas
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True)
-    password = Column(String)
-    is_active = Boolean #Para desactivar usuarios sin borrarlos
+    hashed_password = Column(String)
+    is_active = Column(Boolean, default=True) #Para desactivar usuarios sin borrarlos
 
     #Relación one - to - many con boards
     boards = relationship("Board", back_populates="owner")
@@ -24,7 +24,7 @@ class Board(Base):
     title = Column(String)
     
     #Relación con la tabla users
-    owner_id = Column(ForeignKey("users.id"))
+    owner_id = Column(Integer, ForeignKey("users.id"))
 
     #Relación one - to - many con users
     owner = relationship("User", back_populates="boards")
@@ -41,7 +41,7 @@ class List(Base):
     position = Column(Integer)  #para saber en que orden mostrarlas
     
     #Relación con la tabla boards
-    board_id = Column(ForeignKey("boards.id"))
+    board_id = Column(Integer, ForeignKey("boards.id"))
 
     #Relación one - to - many con boards
     board = relationship("Board", back_populates="lists")
