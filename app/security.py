@@ -30,8 +30,11 @@ def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
 
 #Hash: toma la contraseña plana y devuelve el string encriptado
-def get_password_hash(password):
-    return pwd_context.hash(password)
+def get_password_hash(password: str):
+    # **CORRECCIÓN:** Truncar la contraseña a 72 caracteres para evitar el límite de bcrypt
+    # que causa el ValueError y el error 500.
+    truncated_password = password[:72] 
+    return pwd_context.hash(truncated_password)
 
 # -- FUNCIONES TOKEN --
 
@@ -43,7 +46,14 @@ def create_access_token(data: dict, expires_time: Optional[timedelta] = None):
     else: #usar el tiempo por defecto sino
         expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire}) #añadimos la expiración del diccionario de datos
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM) #generamos el token codificado
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
-
+#Decodificar el token y obtener los datos
+def decode_access_token(token: str):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return payload
+    except Exception as e:
+        # Esto podría ser jose.JWTError (ej. token expirado o inválido)
+        return None
