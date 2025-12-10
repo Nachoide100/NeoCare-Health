@@ -1,26 +1,27 @@
 import React, { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { login } from "../services/authService";
+import { Link, useNavigate } from "react-router-dom";
+import { register } from "../services/authService"; // Assuming a register function will be added
 
-const Login: React.FC = () => {
+const Register: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
-  const navigate = useNavigate(); // 👈 Hook para redirigir
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const success = await login(email, password);
+    const success = await register(email, password);
     if (success) {
-      navigate("/board"); // 👈 Redirección automática
+      setMessage("✅ Registro exitoso. Ahora puedes iniciar sesión.");
+      navigate("/"); // Redirect to login after successful registration
     } else {
-      setMessage("❌ Credenciales incorrectas. Intenta de nuevo.");
+      setMessage("❌ Error al registrar. Intenta de nuevo."); // Simplified error message for now
     }
   };
 
   return (
     <div style={{ maxWidth: "400px", margin: "auto", padding: "2rem" }}>
-      <h2>Login</h2>
+      <h2>Registro de Usuario</h2>
       <form onSubmit={handleSubmit}>
         <div>
           <label>Email:</label>
@@ -29,7 +30,6 @@ const Login: React.FC = () => {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            autoComplete="username"
           />
         </div>
         <div style={{ marginTop: "1rem" }}>
@@ -39,11 +39,10 @@ const Login: React.FC = () => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            autoComplete="current-password"
           />
         </div>
         <button type="submit" style={{ marginTop: "1rem" }}>
-          Entrar
+          Registrarse
         </button>
       </form>
 
@@ -54,10 +53,10 @@ const Login: React.FC = () => {
       )}
 
       <div style={{ marginTop: "1rem", textAlign: "center" }}>
-        ¿No tienes cuenta? <Link to="/register">Regístrate aquí</Link>
+        ¿Ya tienes cuenta? <Link to="/">Inicia Sesión</Link>
       </div>
     </div>
   );
 };
 
-export default Login;
+export default Register;

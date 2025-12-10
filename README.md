@@ -45,7 +45,7 @@ pip install -r requirements.txt
 
 ### 1. Archivo de Entorno `.env`
 
-El proyecto utiliza un archivo `.env` en el directorio `NeoCare-Health-frontend` para gestionar las variables de configuración. Debes crear este archivo si no existe.
+El proyecto utiliza un archivo `.env` en el directorio `NeoCare-Health` para gestionar las variables de configuración. Debes crear este archivo si no existe.
 
 Copia el siguiente contenido y ajústalo a tu configuración local:
 
@@ -56,6 +56,51 @@ DATABASE_URL="postgresql://tu_usuario:tu_contraseña@localhost:5432/tu_basededat
 # Clave secreta para la generación de tokens JWT (puedes cambiarla por cualquier valor seguro)
 SECRET_KEY="tu_clave_secreta_aqui"
 ```
+
+---
+
+## Frontend (React + Vite)
+
+### 1. Instalar Dependencias
+
+Navega al directorio `frontend` e instala las dependencias de Node.js:
+
+```bash
+cd frontend
+npm install
+```
+
+### 2. Ejecutar el Servidor de Desarrollo
+
+Desde el directorio `frontend`, inicia el servidor de desarrollo de Vite:
+
+```bash
+npm run dev
+```
+
+El frontend se iniciará y estará disponible en `http://localhost:5173` (o un puerto similar).
+
+---
+
+## PostgreSQL
+
+Para que el backend funcione correctamente, necesitas tener una instancia de PostgreSQL ejecutándose. Puedes instalar PostgreSQL directamente en tu sistema o usar Docker.
+
+**Recomendación:** Si no tienes PostgreSQL instalado, puedes usar Docker:
+
+1.  **Instala Docker Desktop:** [https://www.docker.com/products/docker-desktop/](https://www.docker.com/products/docker-desktop/)
+2.  **Inicia PostgreSQL con Docker:**
+    ```bash
+    docker run --name some-postgres -e POSTGRES_PASSWORD=mysecretpassword -p 5432:5432 -d postgres
+    ```
+    *   `--name some-postgres`: Nombre de tu contenedor.
+    *   `-e POSTGRES_PASSWORD=mysecretpassword`: Establece la contraseña para el usuario `postgres`. ¡Cambia `mysecretpassword` por una contraseña segura!
+    *   `-p 5432:5432`: Mapea el puerto 5432 de tu máquina al puerto 5432 del contenedor.
+    *   `-d postgres`: Ejecuta el contenedor en segundo plano usando la imagen oficial de PostgreSQL.
+
+    Asegúrate de que el `DATABASE_URL` en tu archivo `.env` coincida con estas credenciales (ej. `postgresql://postgres:mysecretpassword@localhost:5432/tu_basededatos`).
+
+---
 
 ## Ejecución y Pruebas
 

@@ -5,6 +5,11 @@ from passlib.context import CryptContext # Librería para encriptar passwords
 import os
 from dotenv import load_dotenv
 
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
+from sqlalchemy.orm import Session
+from . import database, models
+
 load_dotenv() #Permite acceder a las variables de entorno
 
 # -- CONFIGURACIÓN --
@@ -54,6 +59,45 @@ def decode_access_token(token: str):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         return payload
-    except Exception as e:
-        # Esto podría ser jose.JWTError (ej. token expirado o inválido)
+    except jwt.JWTError:
+        # Captura errores específicos de JWT como token expirado o firma inválida
         return None
+
+
+# -- DEPENDENCIAS DE SEGURIDAD --
+
+# Esquema de autenticación que le dice a FastAPI cómo encontrar el token en el header
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
+
+def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(database.get_db)):
+    """
+    Dependencia para obtener el usuario actual a partir de un token.
+
+    1. Recibe el token del esquema OAuth2.
+    2. Decodifica el token para obtener el payload.
+    3. Extrae el 'subject' (email) del payload.
+    4. Busca el usuario en la base de datos.
+    5. Si algo falla (token inválido, usuario no encontrado), lanza una excepción HTTP 401.
+    
+    Returns:
+        models.User: El objeto de usuario SQLAlchemy correspondiente.
+    """
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="No se pudieron validar las credenciales",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+    payload = decode_access_token(token)
+    if payload is None:
+        raise credentials_exception
+    
+    email: str = payload.get("sub")
+    if email is None:
+        raise credentials_exception
+    
+    user = db.query(models.User).filter(models.User.email == email).first()
+    if user is None:
+        raise credentials_exception
+        
+    return user
