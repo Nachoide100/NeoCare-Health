@@ -184,9 +184,10 @@ const BoardContent: React.FC = () => {
                 label="Título" 
                 fullWidth 
                 value={editingCard.title} 
-                onChange={(e) => setEditingCard({ ...editingCard, title: e.target.value })} 
+                onChange={(e) => setEditingCard({ ...editingCard, title: e.target.value })}
+                inputProps={{ maxLength: 80 }}
               />
-
+    
               {/* Editar Descripción */}
               <TextField 
                 label="Descripción" 
