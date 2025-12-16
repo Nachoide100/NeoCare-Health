@@ -125,3 +125,103 @@ Si la aplicación se inicia correctamente sin errores de base de datos, ¡la con
 Una vez que el servidor esté en funcionamiento, puedes acceder a la documentación interactiva de la API (generada por Swagger UI) en tu navegador visitando:
 
 [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+
+### 4. Endpoints de Tarjetas (Cards)
+
+Los siguientes endpoints gestionan las operaciones CRUD para las tarjetas del tablero. Requieren autenticación JWT.
+
+#### **POST /cards - Crear Tarjeta**
+Crea una nueva tarjeta en un tablero y lista específicos.
+
+*   **Método:** `POST`
+*   **URL:** `/cards`
+*   **Requiere:** Token JWT de autenticación en el header `Authorization: Bearer <token_jwt>`
+*   **Body (JSON):**
+    ```json
+    {
+      "title": "Título de la Nueva Tarjeta",
+      "description": "Descripción detallada de la tarea a realizar.",
+      "list_id": 1,
+      "board_id": 1,
+      "due_date": "2025-12-31"
+    }
+    ```
+*   **Ejemplo con cURL:**
+    ```bash
+    curl -X POST "http://127.0.0.1:8000/cards" \
+      -H "accept: application/json" \
+      -H "Authorization: Bearer <TU_TOKEN_JWT>" \
+      -H "Content-Type: application/json" \
+      -d "{ \"title\": \"Investigar nueva tecnología\", \"description\": \"Buscar soluciones para integrar IA.\", \"list_id\": 1, \"board_id\": 1, \"due_date\": \"2025-12-31\" }"
+    ```
+
+#### **GET /cards - Listar Tarjetas por Tablero**
+Obtiene todas las tarjetas para un `board_id` específico.
+
+*   **Método:** `GET`
+*   **URL:** `/cards?board_id={board_id}`
+*   **Requiere:** Token JWT de autenticación
+*   **Parámetros de Query:**
+    *   `board_id` (entero, requerido): ID del tablero.
+*   **Ejemplo con cURL:**
+    ```bash
+    curl -X GET "http://127.00.1:8000/cards?board_id=1" \
+      -H "accept: application/json" \
+      -H "Authorization: Bearer <TU_TOKEN_JWT>"
+    ```
+
+#### **GET /cards/{card_id} - Ver Detalle de Tarjeta**
+Obtiene los detalles de una tarjeta específica por su ID.
+
+*   **Método:** `GET`
+*   **URL:** `/cards/{card_id}`
+*   **Requiere:** Token JWT de autenticación
+*   **Parámetros de Path:**
+    *   `card_id` (entero): ID de la tarjeta.
+*   **Ejemplo con cURL:**
+    ```bash
+    curl -X GET "http://127.0.0.1:8000/cards/1" \
+      -H "accept: application/json" \
+      -H "Authorization: Bearer <TU_TOKEN_JWT>"
+    ```
+
+#### **PATCH /cards/{card_id} - Editar Tarjeta**
+Actualiza parcialmente los campos de una tarjeta específica.
+
+*   **Método:** `PATCH`
+*   **URL:** `/cards/{card_id}`
+*   **Requiere:** Token JWT de autenticación
+*   **Parámetros de Path:**
+    *   `card_id` (entero): ID de la tarjeta a actualizar.
+*   **Body (JSON - campos opcionales):**
+    ```json
+    {
+      "title": "Título Actualizado",
+      "description": "Nueva descripción.",
+      "list_id": 2,
+      "due_date": "2026-01-15"
+    }
+    ```
+*   **Ejemplo con cURL:**
+    ```bash
+    curl -X PATCH "http://127.0.0.1:8000/cards/1" \
+      -H "accept: application/json" \
+      -H "Authorization: Bearer <TU_TOKEN_JWT>" \
+      -H "Content-Type: application/json" \
+      -d "{ \"description\": \"Descripción actualizada de la tarea.\", \"list_id\": 2 }"
+    ```
+
+#### **DELETE /cards/{card_id} - Eliminar Tarjeta**
+Elimina una tarjeta específica.
+
+*   **Método:** `DELETE`
+*   **URL:** `/cards/{card_id}`
+*   **Requiere:** Token JWT de autenticación
+*   **Parámetros de Path:**
+    *   `card_id` (entero): ID de la tarjeta a eliminar.
+*   **Ejemplo con cURL:**
+    ```bash
+    curl -X DELETE "http://127.0.0.1:8000/cards/1" \
+      -H "accept: application/json" \
+      -H "Authorization: Bearer <TU_TOKEN_JWT>"
+    ```

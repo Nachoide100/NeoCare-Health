@@ -1,5 +1,10 @@
-node_modules/
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
 .env
-Copia/
-aplicación/
 
+# Frontend
+node_modules/
+dist/

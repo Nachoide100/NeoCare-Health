@@ -1,5 +1,6 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime, Date
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
 from .database import Base
 
 class User(Base):
@@ -11,6 +12,7 @@ class User(Base):
     is_active = Column(Boolean, default=True)
 
     boards = relationship("Board", back_populates="owner")
+    cards = relationship("Card", back_populates="user")
 
 class Board(Base):
     __tablename__ = "boards"
@@ -21,6 +23,7 @@ class Board(Base):
 
     owner = relationship("User", back_populates="boards")
     lists = relationship("List", back_populates="board")
+    cards = relationship("Card", back_populates="board", cascade="all, delete-orphan")
 
 class List(Base): 
     __tablename__ = "lists" 
@@ -38,12 +41,17 @@ class Card(Base):
     __tablename__ = "cards"
 
     id = Column(Integer, primary_key=True, index=True)
-    title = Column(String, index=True)
+    title = Column(String(80), nullable=False, index=True)
     description = Column(String, nullable=True)
-    deadline = Column(DateTime, nullable=True)
+    due_date = Column(Date, nullable=True)
     
     list_id = Column(Integer, ForeignKey("lists.id"))
     board_id = Column(Integer, ForeignKey("boards.id")) 
+    user_id = Column(Integer, ForeignKey("users.id"))
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     list = relationship("List", back_populates="cards")
-    board = relationship("Board")
+    board = relationship("Board", back_populates="cards")
+    user = relationship("User", back_populates="cards")

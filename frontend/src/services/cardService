@@ -20,8 +20,17 @@ export const cardService = {
         return await response.json();
     },
 
+    // Obtener una tarjeta por ID
+    getCard: async (cardId: number): Promise<Card> => {
+        const response = await fetch(`${API_URL}/cards/${cardId}`, {
+            headers: getHeaders()
+        });
+        if (!response.ok) throw new Error("Error al cargar la tarjeta");
+        return await response.json();
+    },
+
     // Crear tarjeta
-    createCard: async (card: Omit<Card, 'id'>): Promise<Card> => {
+    createCard: async (card: Omit<Card, "id" | "user_id" | "created_at" | "updated_at">): Promise<Card> => {
         const response = await fetch(`${API_URL}/cards/`, {
             method: "POST",
             headers: getHeaders(),
@@ -34,7 +43,7 @@ export const cardService = {
     // Actualizar tarjeta (Editar y Mover)
     updateCard: async (cardId: number, updates: Partial<Card>): Promise<Card> => {
         const response = await fetch(`${API_URL}/cards/${cardId}`, {
-            method: "PUT",
+            method: "PATCH",
             headers: getHeaders(),
             body: JSON.stringify(updates),
         });

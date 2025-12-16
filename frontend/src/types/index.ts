@@ -2,12 +2,15 @@ export interface Card {
     id: number;
     title: string;
     description?: string;
-    deadline?: string;
+    due_date?: string;
     list_id: number;
     board_id: number;
+    user_id: number;
+    created_at: string;
+    updated_at: string;
 }
 
-export interface ListColumn {
+export interface List {
     id: number;
     title: string;
     position: number;
