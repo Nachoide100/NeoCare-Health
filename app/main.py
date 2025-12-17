@@ -1,11 +1,14 @@
-from fastapi import FastAPI, Depends
+"""
+Módulo principal de la API de NeoCare Health.
+Configura la aplicación FastAPI, CORS y las rutas de los controladores.
+"""
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy.orm import Session
-from .database import engine, get_db
-from . import models
-from .routers import auth, users, cards, lists
+from app.database import engine
+from app import models
+from app.routers import auth, users, cards, lists, boards
 
-# Crear tablas si no existen
+# Crear tablas en la base de datos si no existen
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
@@ -14,10 +17,12 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Configuración CORS 
+# Configuración de CORS
+# Permite que el Frontend se comunique con el Backend sin bloqueos de seguridad
 origins = [
     "http://localhost:5173",
     "http://localhost:3000",
+    "http://127.0.0.1:5173",
 ]
 
 app.add_middleware(
@@ -28,31 +33,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Incluir los Routers 
+# Inclusión de Routers (Rutas de la API)
 app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(cards.router)
 app.include_router(lists.router)
+app.include_router(boards.router)
 
 @app.get("/")
 def read_root():
+    """Ruta de bienvenida para verificar el estado de la API."""
     return {"message": "Bienvenidos a la API de NeoCare Health."}
-
-# --- ENDPOINT SETUP PARA CREAR COLUMNAS ---
-@app.post("/setup-lists")
-def setup_default_lists(db: Session = Depends(get_db)):
-    board = db.query(models.Board).first()
-    if not board:
-        return {"error": "Primero debes registrarte para tener un tablero."}
-    
-    if db.query(models.List).filter(models.List.board_id == board.id).count() > 0:
-        return {"message": "El tablero ya tiene listas."}
-
-    lists = [
-        models.List(title="Por Hacer", position=1, board_id=board.id),
-        models.List(title="En Progreso", position=2, board_id=board.id),
-        models.List(title="Hecho", position=3, board_id=board.id)
-    ]
-    db.add_all(lists)
-    db.commit()
-    return {"message": "¡Columnas creadas con éxito!"}

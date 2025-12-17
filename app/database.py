@@ -1,3 +1,8 @@
+"""
+Módulo de configuración de la Base de Datos.
+Maneja la conexión con PostgreSQL, la creación automática de la DB si no existe
+y la gestión de sesiones de SQLAlchemy.
+"""
 import os
 import psycopg2
 from sqlalchemy import create_engine
@@ -5,10 +10,9 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from dotenv import load_dotenv
 
-# Cargar el archivo .env
+# Cargar variables de entorno
 load_dotenv()
 
-# Obtener la URL de conexión 
 SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")
 
 if not SQLALCHEMY_DATABASE_URL:
@@ -16,10 +20,10 @@ if not SQLALCHEMY_DATABASE_URL:
 
 # --- LÓGICA DE CREACIÓN DE BASE DE DATOS AUTOMÁTICA ---
 try:
-    # 1. Extraer detalles de conexión
+    # 1. Extraer detalles de conexión de la URL
     base_url_no_db = SQLALCHEMY_DATABASE_URL.rsplit('/', 1)[0]
     db_name = SQLALCHEMY_DATABASE_URL.rsplit('/', 1)[1]
-    
+
     user_pass = base_url_no_db.split('//')[1].split('@')[0]
     user = user_pass.split(':')[0]
     password = user_pass.split(':')[1]
@@ -39,7 +43,7 @@ try:
     conn.autocommit = True
     cursor = conn.cursor()
 
-    # 3. Comprobar si existe
+    # 3. Comprobar si existe la base de datos
     cursor.execute(f"SELECT 1 FROM pg_database WHERE datname = '{db_name}'")
     exists = cursor.fetchone()
 
@@ -50,29 +54,29 @@ try:
         print(f"PostgreSQL: Base de datos '{db_name}' creada exitosamente.")
     else:
         print(f"PostgreSQL: Base de datos '{db_name}' ya existe. Continuando...")
-        
+
     cursor.close()
     conn.close()
 
-except Exception as e:
-    # Si falla esta parte (ej. usuario sin permisos), avisamos pero no rompemos el programa
-    print(f"Nota: Verificación automática de DB omitida: {e}")
+except psycopg2.Error as e:  # CORRECCIÓN W0718: Captura específica para errores de Postgres
+    print(f"Nota: Verificación automática de DB omitida o fallida: {e}")
+except (IndexError, ValueError) as e: # Captura específica para errores de parseo de URL
+    print(f"Nota: Error al parsear la URL de la base de datos: {e}")
 
-# --- FIN LÓGICA AUTOMÁTICA ---
+# --- CONFIGURACIÓN DE SQLALCHEMY ---
 
-# Crear el Motor
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
-
-# Crear la fábrica de sesiones
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-# Clase Base
 Base = declarative_base()
 
-# Dependencia para obtener la DB
 def get_db():
+    """
+    Generador de sesiones de base de datos.
+    Asegura que la conexión se cierre después de cada petición.
+    """
     db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
+# Fin de app/database.py

@@ -1,24 +1,71 @@
-# NeoCare Health API
+# NeoCare Health
 
-Esta es la API para el sistema de gestión interna de NeoCare Health.
+Sistema de gestión de tableros tipo Kanban para la gestión interna de NeoCare Health. Permite a los usuarios crear tableros, organizar tareas en listas y gestionar tarjetas con funcionalidades completas de CRUD.
 
-## Configuración del Entorno
+## 🚀 Tecnologías
 
-Sigue estos pasos para configurar tu entorno de desarrollo local.
+### Backend
+- **FastAPI**: Framework web moderno y rápido para Python
+- **PostgreSQL**: Base de datos relacional
+- **SQLAlchemy**: ORM para Python
+- **JWT**: Autenticación con tokens
+- **Pydantic**: Validación de datos
 
-### 1. Crear y Activar Entorno Virtual
+### Frontend
+- **React 19**: Biblioteca de JavaScript para interfaces de usuario
+- **TypeScript**: Superset tipado de JavaScript
+- **Vite**: Build tool y servidor de desarrollo
+- **Material-UI (MUI)**: Biblioteca de componentes React
+- **React Router**: Enrutamiento para aplicaciones React
 
-Desde el directorio `NeoCare-Health-frontend`, crea un entorno virtual:
+## 📁 Estructura del Proyecto
 
-```bash
-python -m venv venv
+```
+NeoCare-Health/
+├── app/                    # Backend (FastAPI)
+│   ├── routers/           # Rutas de la API
+│   │   ├── auth.py        # Autenticación (registro, login)
+│   │   ├── users.py       # Gestión de usuarios
+│   │   ├── boards.py      # Gestión de tableros
+│   │   ├── lists.py       # Gestión de listas
+│   │   └── cards.py       # Gestión de tarjetas
+│   ├── models.py          # Modelos de base de datos
+│   ├── schemas.py         # Esquemas Pydantic
+│   ├── database.py        # Configuración de base de datos
+│   ├── security.py        # Utilidades de seguridad
+│   └── main.py            # Aplicación principal FastAPI
+├── frontend/              # Frontend (React + TypeScript)
+│   ├── src/
+│   │   ├── components/    # Componentes React
+│   │   ├── pages/         # Páginas de la aplicación
+│   │   ├── services/      # Servicios API
+│   │   └── types/         # Tipos TypeScript
+│   └── package.json
+├── requirements.txt       # Dependencias Python
+└── README.md
 ```
 
-Actívalo:
+## ⚙️ Configuración del Entorno
+
+### 1. Prerrequisitos
+
+- Python 3.10 o superior
+- Node.js 18 o superior
+- PostgreSQL (o Docker para ejecutar PostgreSQL en contenedor)
+
+### 2. Backend - Configuración del Entorno Virtual
+
+Desde el directorio raíz `NeoCare-Health`, crea un entorno virtual:
+
+```bash
+python -m venv .venv
+```
+
+Actívalo según tu sistema operativo:
 
 **En Windows:**
 ```bash
-.\venv\Scripts\activate
+.\.venv\Scripts\activate
 ```
 
 **En Windows PowerShell:**
@@ -28,12 +75,18 @@ Actívalo:
 
 **En macOS/Linux:**
 ```bash
-source venv/bin/activate
+source .venv/bin/activate
 ```
-### 2. Actualizar pip en tu entorno virtual
-python.exe -m pip install --upgrade pip
 
-### 3. Instalar Dependencias
+### 3. Actualizar pip
+
+Con el entorno virtual activado:
+
+```bash
+python.exe -m pip install --upgrade pip
+```
+
+### 4. Instalar Dependencias del Backend
 
 Asegúrate de que tu entorno virtual esté activado y luego instala los paquetes necesarios:
 
@@ -41,187 +94,308 @@ Asegúrate de que tu entorno virtual esté activado y luego instala los paquetes
 pip install -r requirements.txt
 ```
 
-## Configuración del Proyecto
+### 5. Configuración de la Base de Datos
 
-### 1. Archivo de Entorno `.env`
+#### Opción A: PostgreSQL Local
 
-El proyecto utiliza un archivo `.env` en el directorio `NeoCare-Health` para gestionar las variables de configuración. Debes crear este archivo si no existe.
+Asegúrate de tener PostgreSQL instalado y crea una base de datos:
 
-Copia el siguiente contenido y ajústalo a tu configuración local:
+```sql
+CREATE DATABASE necocare_health;
+```
+
+#### Opción B: PostgreSQL con Docker (Recomendado)
+
+Si no tienes PostgreSQL instalado, puedes usar Docker:
+
+```bash
+docker run --name postgres-neocare -e POSTGRES_PASSWORD=mysecretpassword -p 5432:5432 -d postgres
+```
+
+Luego crea la base de datos:
+
+```bash
+docker exec -it postgres-neocare psql -U postgres -c "CREATE DATABASE necocare_health;"
+```
+
+### 6. Archivo de Entorno `.env`
+
+Crea un archivo `.env` en el directorio raíz del proyecto con el siguiente contenido:
 
 ```env
 # URL de conexión a tu base de datos PostgreSQL
-DATABASE_URL="postgresql://tu_usuario:tu_contraseña@localhost:5432/tu_basededatos"
+DATABASE_URL="postgresql://postgres:mysecretpassword@localhost:5432/necocare_health"
 
-# Clave secreta para la generación de tokens JWT (puedes cambiarla por cualquier valor seguro)
-SECRET_KEY="tu_clave_secreta_aqui"
+# Clave secreta para la generación de tokens JWT (cambia por una clave segura)
+SECRET_KEY="tu_clave_secreta_muy_segura_aqui_cambiar_en_produccion"
 ```
 
----
+**⚠️ Importante:** En producción, utiliza una clave secreta fuerte y única. Puedes generar una con:
 
-## Frontend (React + Vite)
+```python
+import secrets
+print(secrets.token_urlsafe(32))
+```
 
-### 1. Instalar Dependencias
+## 🚀 Ejecución
 
-Navega al directorio `frontend` e instala las dependencias de Node.js:
+### Backend (FastAPI)
+
+Con el entorno virtual activado, desde el directorio raíz:
+
+```bash
+uvicorn app.main:app --reload
+```
+
+El servidor backend se iniciará y estará disponible en:
+- **API**: `http://127.0.0.1:8000`
+- **Documentación interactiva (Swagger)**: `http://127.0.0.1:8000/docs`
+- **Documentación alternativa (ReDoc)**: `http://127.0.0.1:8000/redoc`
+
+### Frontend (React + Vite)
+
+En una nueva terminal, navega al directorio `frontend`:
 
 ```bash
 cd frontend
 npm install
 ```
 
-### 2. Ejecutar el Servidor de Desarrollo
-
-Desde el directorio `frontend`, inicia el servidor de desarrollo de Vite:
+Inicia el servidor de desarrollo:
 
 ```bash
 npm run dev
 ```
 
-El frontend se iniciará y estará disponible en `http://localhost:5173` (o un puerto similar).
+El frontend se iniciará y estará disponible en `http://localhost:5173` (o un puerto similar que Vite indique).
 
----
+## 📚 API Endpoints
 
-## PostgreSQL
-
-Para que el backend funcione correctamente, necesitas tener una instancia de PostgreSQL ejecutándose. Puedes instalar PostgreSQL directamente en tu sistema o usar Docker.
-
-**Recomendación:** Si no tienes PostgreSQL instalado, puedes usar Docker:
-
-1.  **Instala Docker Desktop:** [https://www.docker.com/products/docker-desktop/](https://www.docker.com/products/docker-desktop/)
-2.  **Inicia PostgreSQL con Docker:**
-    ```bash
-    docker run --name some-postgres -e POSTGRES_PASSWORD=mysecretpassword -p 5432:5432 -d postgres
-    ```
-    *   `--name some-postgres`: Nombre de tu contenedor.
-    *   `-e POSTGRES_PASSWORD=mysecretpassword`: Establece la contraseña para el usuario `postgres`. ¡Cambia `mysecretpassword` por una contraseña segura!
-    *   `-p 5432:5432`: Mapea el puerto 5432 de tu máquina al puerto 5432 del contenedor.
-    *   `-d postgres`: Ejecuta el contenedor en segundo plano usando la imagen oficial de PostgreSQL.
-
-    Asegúrate de que el `DATABASE_URL` en tu archivo `.env` coincida con estas credenciales (ej. `postgresql://postgres:mysecretpassword@localhost:5432/tu_basededatos`).
-
----
-
-## Ejecución y Pruebas
-
-### 1. Iniciar el Servidor Web
-
-Con el entorno virtual activado y desde el directorio `NeoCare-Health-frontend`, ejecuta el siguiente comando para iniciar la aplicación:
-
-```bash
-uvicorn app.main:app --reload
+Todos los endpoints requieren autenticación JWT excepto los de autenticación. Incluye el token en el header:
+```
+Authorization: Bearer <tu_token_jwt>
 ```
 
-El servidor se iniciará y quedará escuchando en `http://127.0.0.1:8000`.
+### Autenticación (`/auth`)
 
-### 2. Probar la Conexión a la Base de Datos
+#### POST `/auth/register` - Registro de Usuario
+Registra un nuevo usuario y crea automáticamente su tablero principal con listas por defecto.
 
-Al iniciar, la aplicación intentará conectarse a la base de datos especificada en tu archivo `.env`. Si hay un error de conexión (por ejemplo, credenciales incorrectas, base de datos no existente o el servidor de base de datos no está en ejecución), verás un error detallado en la consola donde ejecutaste `uvicorn`.
+**Body (JSON):**
+```json
+{
+  "email": "usuario@ejemplo.com",
+  "password": "contraseña_segura"
+}
+```
 
-Si la aplicación se inicia correctamente sin errores de base de datos, ¡la conexión ha sido exitosa!
+#### POST `/auth/login` - Inicio de Sesión
+Autentica un usuario y devuelve un token JWT.
 
-### 3. Acceder a la Documentación de la API
+**Body (form-data):**
+- `username`: Email del usuario
+- `password`: Contraseña
 
-Una vez que el servidor esté en funcionamiento, puedes acceder a la documentación interactiva de la API (generada por Swagger UI) en tu navegador visitando:
+**Respuesta:**
+```json
+{
+  "access_token": "eyJ0eXAiOiJKV1QiLCJhbGc...",
+  "token_type": "bearer"
+}
+```
 
-[http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+### Usuarios (`/users`)
 
-### 4. Endpoints de Tarjetas (Cards)
+#### GET `/users/me` - Obtener Usuario Actual
+Devuelve los datos del usuario autenticado.
 
-Los siguientes endpoints gestionan las operaciones CRUD para las tarjetas del tablero. Requieren autenticación JWT.
+**Requiere:** Token JWT
 
-#### **POST /cards - Crear Tarjeta**
+### Tableros (`/boards`)
+
+#### POST `/boards` - Crear Tablero
+Crea un nuevo tablero para el usuario actual e inicializa listas por defecto.
+
+**Requiere:** Token JWT
+
+**Body (JSON):**
+```json
+{
+  "title": "Mi Nuevo Tablero"
+}
+```
+
+#### GET `/boards` - Listar Tableros
+Obtiene todos los tableros del usuario autenticado.
+
+**Requiere:** Token JWT
+
+### Listas (`/lists`)
+
+#### GET `/lists?board_id={board_id}` - Listar Listas de un Tablero
+Obtiene todas las listas de un tablero específico con sus tarjetas.
+
+**Requiere:** Token JWT
+
+**Parámetros:**
+- `board_id` (query): ID del tablero
+
+### Tarjetas (`/cards`)
+
+#### POST `/cards` - Crear Tarjeta
 Crea una nueva tarjeta en un tablero y lista específicos.
 
-*   **Método:** `POST`
-*   **URL:** `/cards`
-*   **Requiere:** Token JWT de autenticación en el header `Authorization: Bearer <token_jwt>`
-*   **Body (JSON):**
-    ```json
-    {
-      "title": "Título de la Nueva Tarjeta",
-      "description": "Descripción detallada de la tarea a realizar.",
-      "list_id": 1,
-      "board_id": 1,
-      "due_date": "2025-12-31"
-    }
-    ```
-*   **Ejemplo con cURL:**
-    ```bash
-    curl -X POST "http://127.0.0.1:8000/cards" \
-      -H "accept: application/json" \
-      -H "Authorization: Bearer <TU_TOKEN_JWT>" \
-      -H "Content-Type: application/json" \
-      -d "{ \"title\": \"Investigar nueva tecnología\", \"description\": \"Buscar soluciones para integrar IA.\", \"list_id\": 1, \"board_id\": 1, \"due_date\": \"2025-12-31\" }"
-    ```
+**Requiere:** Token JWT
 
-#### **GET /cards - Listar Tarjetas por Tablero**
-Obtiene todas las tarjetas para un `board_id` específico.
+**Body (JSON):**
+```json
+{
+  "title": "Título de la Nueva Tarjeta",
+  "description": "Descripción detallada de la tarea a realizar.",
+  "list_id": 1,
+  "board_id": 1,
+  "due_date": "2025-12-31"
+}
+```
 
-*   **Método:** `GET`
-*   **URL:** `/cards?board_id={board_id}`
-*   **Requiere:** Token JWT de autenticación
-*   **Parámetros de Query:**
-    *   `board_id` (entero, requerido): ID del tablero.
-*   **Ejemplo con cURL:**
-    ```bash
-    curl -X GET "http://127.00.1:8000/cards?board_id=1" \
-      -H "accept: application/json" \
-      -H "Authorization: Bearer <TU_TOKEN_JWT>"
-    ```
+#### GET `/cards?board_id={board_id}` - Listar Tarjetas
+Obtiene todas las tarjetas de un tablero específico.
 
-#### **GET /cards/{card_id} - Ver Detalle de Tarjeta**
+**Requiere:** Token JWT
+
+**Parámetros:**
+- `board_id` (query): ID del tablero
+
+#### GET `/cards/{card_id}` - Ver Detalle de Tarjeta
 Obtiene los detalles de una tarjeta específica por su ID.
 
-*   **Método:** `GET`
-*   **URL:** `/cards/{card_id}`
-*   **Requiere:** Token JWT de autenticación
-*   **Parámetros de Path:**
-    *   `card_id` (entero): ID de la tarjeta.
-*   **Ejemplo con cURL:**
-    ```bash
-    curl -X GET "http://127.0.0.1:8000/cards/1" \
-      -H "accept: application/json" \
-      -H "Authorization: Bearer <TU_TOKEN_JWT>"
-    ```
+**Requiere:** Token JWT
 
-#### **PATCH /cards/{card_id} - Editar Tarjeta**
+#### PATCH `/cards/{card_id}` - Editar Tarjeta
 Actualiza parcialmente los campos de una tarjeta específica.
 
-*   **Método:** `PATCH`
-*   **URL:** `/cards/{card_id}`
-*   **Requiere:** Token JWT de autenticación
-*   **Parámetros de Path:**
-    *   `card_id` (entero): ID de la tarjeta a actualizar.
-*   **Body (JSON - campos opcionales):**
-    ```json
-    {
-      "title": "Título Actualizado",
-      "description": "Nueva descripción.",
-      "list_id": 2,
-      "due_date": "2026-01-15"
-    }
-    ```
-*   **Ejemplo con cURL:**
-    ```bash
-    curl -X PATCH "http://127.0.0.1:8000/cards/1" \
-      -H "accept: application/json" \
-      -H "Authorization: Bearer <TU_TOKEN_JWT>" \
-      -H "Content-Type: application/json" \
-      -d "{ \"description\": \"Descripción actualizada de la tarea.\", \"list_id\": 2 }"
-    ```
+**Requiere:** Token JWT
 
-#### **DELETE /cards/{card_id} - Eliminar Tarjeta**
+**Body (JSON - campos opcionales):**
+```json
+{
+  "title": "Título Actualizado",
+  "description": "Nueva descripción.",
+  "list_id": 2,
+  "due_date": "2026-01-15"
+}
+```
+
+#### DELETE `/cards/{card_id}` - Eliminar Tarjeta
 Elimina una tarjeta específica.
 
-*   **Método:** `DELETE`
-*   **URL:** `/cards/{card_id}`
-*   **Requiere:** Token JWT de autenticación
-*   **Parámetros de Path:**
-    *   `card_id` (entero): ID de la tarjeta a eliminar.
-*   **Ejemplo con cURL:**
-    ```bash
-    curl -X DELETE "http://127.0.0.1:8000/cards/1" \
-      -H "accept: application/json" \
-      -H "Authorization: Bearer <TU_TOKEN_JWT>"
-    ```
+**Requiere:** Token JWT
+
+## 🧪 Ejemplos de Uso con cURL
+
+### 1. Registrar un nuevo usuario
+```bash
+curl -X POST "http://127.0.0.1:8000/auth/register" \
+  -H "Content-Type: application/json" \
+  -d "{\"email\": \"test@ejemplo.com\", \"password\": \"mi_contraseña\"}"
+```
+
+### 2. Iniciar sesión
+```bash
+curl -X POST "http://127.0.0.1:8000/auth/login" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "username=test@ejemplo.com&password=mi_contraseña"
+```
+
+### 3. Crear una tarjeta (con token JWT)
+```bash
+curl -X POST "http://127.0.0.1:8000/cards" \
+  -H "accept: application/json" \
+  -H "Authorization: Bearer <TU_TOKEN_JWT>" \
+  -H "Content-Type: application/json" \
+  -d "{\"title\": \"Nueva Tarea\", \"description\": \"Descripción de la tarea\", \"list_id\": 1, \"board_id\": 1}"
+```
+
+### 4. Listar tarjetas de un tablero
+```bash
+curl -X GET "http://127.0.0.1:8000/cards?board_id=1" \
+  -H "accept: application/json" \
+  -H "Authorization: Bearer <TU_TOKEN_JWT>"
+```
+
+## 📖 Documentación de la API
+
+Una vez que el servidor backend esté en funcionamiento, puedes acceder a la documentación interactiva:
+
+- **Swagger UI**: http://127.0.0.1:8000/docs
+- **ReDoc**: http://127.0.0.1:8000/redoc
+
+Estas interfaces te permiten probar todos los endpoints directamente desde el navegador.
+
+## 🗄️ Modelos de Base de Datos
+
+El sistema utiliza los siguientes modelos principales:
+
+- **User**: Usuarios del sistema (email, contraseña hasheada)
+- **Board**: Tableros de trabajo pertenecientes a usuarios
+- **List**: Listas/columnas dentro de un tablero (con posición)
+- **Card**: Tarjetas/tareas individuales con título, descripción, fecha de vencimiento
+
+Las tablas se crean automáticamente al iniciar la aplicación si no existen.
+
+## 🔒 Seguridad
+
+- Las contraseñas se almacenan hasheadas usando bcrypt
+- La autenticación utiliza tokens JWT
+- Los endpoints protegidos validan la propiedad de recursos (usuarios solo pueden acceder a sus propios tableros, listas y tarjetas)
+- CORS configurado para permitir comunicación del frontend
+
+## 🛠️ Desarrollo
+
+### Comandos útiles del Frontend
+
+```bash
+# Instalar dependencias
+npm install
+
+# Ejecutar en desarrollo
+npm run dev
+
+# Construir para producción
+npm run build
+
+# Previsualizar build de producción
+npm run preview
+
+# Ejecutar linter
+npm run lint
+```
+
+### Estructura de la Base de Datos
+
+La base de datos se inicializa automáticamente al iniciar la aplicación. Las relaciones principales son:
+
+- Un **User** puede tener múltiples **Boards**
+- Un **Board** puede tener múltiples **Lists** y **Cards**
+- Una **List** puede tener múltiples **Cards**
+- Una **Card** pertenece a un **User**, un **Board** y una **List**
+
+## 📝 Notas Adicionales
+
+- Al registrar un nuevo usuario, se crea automáticamente un "Tablero Principal" con listas por defecto
+- Al crear un nuevo tablero, se inicializan automáticamente listas por defecto
+- Las tarjetas incluyen timestamps automáticos (`created_at`, `updated_at`)
+- El sistema utiliza migraciones automáticas de SQLAlchemy para crear/actualizar tablas
+
+## 🤝 Contribuir
+
+Este es un proyecto interno de NeoCare Health. Para contribuir:
+
+1. Crea una rama para tu feature
+2. Realiza tus cambios
+3. Asegúrate de que todo funcione correctamente
+4. Envía un pull request
+
+## 📄 Licencia
+
+Proyecto interno de NeoCare Health.

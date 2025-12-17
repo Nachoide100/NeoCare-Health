@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { logout, getProfile } from "../services/authService";
+import BoardContent from "../components/BoardContent"; // Importar BoardContent
 import {
   Box,
   Drawer,
@@ -8,7 +9,7 @@ import {
   Toolbar,
   Typography,
   List,
-  ListItem,
+  ListItemButton, // Changed from ListItem to ListItemButton
   ListItemIcon,
   ListItemText,
   CssBaseline,
@@ -81,21 +82,21 @@ const Board: React.FC = () => {
       >
         <Toolbar />
         <List>
-          <ListItem button="true" key="tablero">
+          <ListItemButton component="li" key="tablero"> {/* Changed to ListItemButton */}
             <ListItemIcon>
               <DashboardIcon />
             </ListItemIcon>
             <ListItemText primary="Mi Tablero" />
-          </ListItem>
+          </ListItemButton>
         </List>
         <Box sx={{ flexGrow: 1 }} />
         <List>
-           <ListItem button key="logout" onClick={handleLogout}>
+           <ListItemButton component="li" key="logout" onClick={handleLogout}> {/* Changed to ListItemButton */}
             <ListItemIcon>
               <LogoutIcon />
             </ListItemIcon>
             <ListItemText primary="Cerrar Sesión" />
-          </ListItem>
+          </ListItemButton>
         </List>
       </Drawer>
       <Box
@@ -107,9 +108,8 @@ const Board: React.FC = () => {
         {loading ? (
           <CircularProgress />
         ) : user ? (
-          <Typography paragraph>
-            ¡Bienvenido, {user.email}! Aquí es donde irán tus columnas y tarjetas.
-          </Typography>
+          // Renderizar BoardContent si el usuario está cargado
+          <BoardContent boardId={user.id} />
         ) : (
           <Typography paragraph>
             No se pudieron cargar los datos del usuario.

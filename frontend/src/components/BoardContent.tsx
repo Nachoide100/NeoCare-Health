@@ -1,14 +1,8 @@
 import React, { useEffect, useState } from "react";
-import {
-  Box,
-  Typography,
-  Paper,
-  Button,
-  Chip,
-} from "@mui/material"; // Reduced imports
+import { Box } from "@mui/material"; 
 import { cardService } from "../services/cardService";
 import { listService } from "../services/listService";
-import { Card, List } from "../types";
+import type { Card, List } from "../types"; // Changed to type-only import
 
 // Import new components
 import ListColumn from "./ListColumn";
@@ -21,7 +15,7 @@ const BoardContent: React.FC<{ boardId: number }> = ({ boardId }) => {
   // State for CardForm
   const [isCardFormOpen, setIsCardFormOpen] = useState(false);
   const [cardToEdit, setCardToEdit] = useState<Card | null>(null);
-  const [initialListIdForCreate, setInitialListIdForCreate] = useState<number | null>(null);
+  const [initialListIdForCardForm, setInitialListIdForCardForm] = useState<number | undefined>(undefined); // New state
 
   // 1. Cargar tarjetas y listas
   useEffect(() => {
@@ -44,50 +38,73 @@ const BoardContent: React.FC<{ boardId: number }> = ({ boardId }) => {
     }
   };
 
-
-
-
+  const handleDeleteCard = async (cardId: number) => {
+    try {
+        await cardService.deleteCard(cardId);
+        setCards(cards.filter((card) => card.id !== cardId));
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "Error al eliminar la tarjeta";
+        console.error("Error en handleDeleteCard:", error);
+        alert(errorMessage);
+    }
+  };
 
   // --- Handlers for CardForm (creation and editing) ---
   const handleOpenCreateCardForm = (listId: number) => {
     setCardToEdit(null); // Clear any editing card
-    setInitialListIdForCreate(listId);
+    setInitialListIdForCardForm(listId); // Set the listId for the form
     setIsCardFormOpen(true);
   };
 
   const handleOpenEditCardForm = (card: Card) => {
     setCardToEdit(card);
+    setInitialListIdForCardForm(card.list_id); // Set the card's listId for editing
     setIsCardFormOpen(true);
   };
 
   const handleCloseCardForm = () => {
     setIsCardFormOpen(false);
     setCardToEdit(null);
-    setInitialListIdForCreate(null);
+    setInitialListIdForCardForm(undefined); // Reset
   };
 
   const handleCardFormSubmit = async (cardData: Partial<Card> & { list_id: number, board_id: number }) => {
     try {
       if (cardToEdit) {
-        // Update existing card
-        const updatedCard = await cardService.updateCard(cardToEdit.id, cardData);
+        // Update existing card - solo enviar campos que el backend acepta
+        const updateData: Partial<Card> = {
+          title: cardData.title,
+          description: cardData.description,
+          list_id: cardData.list_id,
+          due_date: cardData.due_date || undefined,
+        };
+        const updatedCard = await cardService.updateCard(cardToEdit.id, updateData);
         setCards(cards.map((c) => (c.id === updatedCard.id ? updatedCard : c)));
       } else {
         // Create new card
-        const newCard = await cardService.createCard({ ...cardData, board_id: boardId });
+        const { title = '', description = '', due_date, ...restCardData } = cardData;
+        const newCardData = {
+            ...restCardData,
+            title,
+            description,
+            due_date: due_date === undefined ? null : due_date,
+            board_id: boardId
+        };
+        const newCard = await cardService.createCard(newCardData as Card); // Cast to Card as createCard expects Card
         setCards([...cards, newCard]);
       }
       handleCloseCardForm();
     } catch (error) {
-      alert(`Error al ${cardToEdit ? "actualizar" : "crear"} la tarjeta`);
-      console.error(error);
+      const errorMessage = error instanceof Error ? error.message : `Error al ${cardToEdit ? "actualizar" : "crear"} la tarjeta`;
+      console.error("Error en handleCardFormSubmit:", error);
+      alert(errorMessage);
     }
   };
   return (
     <Box sx={{ display: "flex", flexDirection: "row", overflowX: "auto", height: "calc(100vh - 80px)", padding: 2, gap: 2 }}>
       
       {/* RENDERIZADO DE COLUMNAS */}
-      {boardLists.map((list) => ( // Use list instead of col for clarity
+      {boardLists.map((list) => (
         <ListColumn
           key={list.id}
           list={list}
@@ -107,6 +124,7 @@ const BoardContent: React.FC<{ boardId: number }> = ({ boardId }) => {
           initialCard={cardToEdit}
           boardLists={boardLists}
           boardId={boardId}
+          initialListId={initialListIdForCardForm}
         />
       )}
 

@@ -12,7 +12,7 @@ import {
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import AccessTimeIcon from "@mui/icons-material/AccessTime"; // Added AccessTimeIcon
-import { Card } from "../types";
+import type { Card } from "../types";
 
 // Utility function to format date for display
 const formatDateDisplay = (isoString?: string) => isoString ? new Date(isoString).toLocaleDateString() : null;

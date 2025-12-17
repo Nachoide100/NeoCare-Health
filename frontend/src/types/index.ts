@@ -16,4 +16,15 @@ export interface List {
     position: number;
     board_id: number;
     cards?: Card[];
+    color?: string; // Added to fix TS2339 error
+}
+
+export interface Board {
+    id: number;
+    title: string;
+    owner_id: number;
+}
+
+export interface BoardCreate {
+    title: string;
 }

@@ -13,7 +13,7 @@ import {
   Select,
   MenuItem,
 } from "@mui/material";
-import { Card, List } from "../types"; // Assuming Card and List types are in ../types
+import type { Card, List } from "../types"; // Assuming Card and List types are in ../types
 
 // Using Card as base for CardCreate, and adding optional fields for CardUpdate
 // This simplified CardFormData will be used internally by the form
@@ -31,6 +31,7 @@ interface CardFormProps {
   initialCard?: Card | null; // Card data if editing, null/undefined if creating
   boardLists: List[];
   boardId: number; // boardId is required for creation
+  initialListId?: number; // New prop: ID of the list to pre-select for new cards
 }
 
 const CardForm: React.FC<CardFormProps> = ({
@@ -40,11 +41,12 @@ const CardForm: React.FC<CardFormProps> = ({
   initialCard,
   boardLists,
   boardId,
+  initialListId, // Destructure new prop
 }) => {
   const [formData, setFormData] = useState<CardFormData>({
     title: "",
     description: "",
-    list_id: boardLists.length > 0 ? boardLists[0].id : 0, // Default to first list
+    list_id: initialListId || (boardLists.length > 0 ? boardLists[0].id : 0), // Prioritize initialListId
     due_date: "",
   });
 
@@ -57,15 +59,16 @@ const CardForm: React.FC<CardFormProps> = ({
         due_date: initialCard.due_date ? initialCard.due_date.toString() : "", // Convert Date object to string
       });
     } else {
-      // Reset for creation form
+      // Reset for creation form, prioritizing initialListId
       setFormData({
         title: "",
         description: "",
-        list_id: boardLists.length > 0 ? boardLists[0].id : 0,
+        list_id: initialListId || (boardLists.length > 0 ? boardLists[0].id : 0),
         due_date: "",
       });
     }
-  }, [initialCard, boardLists]);
+  }, [initialCard, boardLists, initialListId]); // Add initialListId to dependencies
+
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | { name?: string; value: unknown }>) => {
     const { name, value } = e.target;

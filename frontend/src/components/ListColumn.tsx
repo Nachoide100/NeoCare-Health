@@ -14,7 +14,7 @@ import {
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
-import { Card, List } from "../types";
+import type { Card, List } from "../types";
 
 interface ListColumnProps {
   list: List;
