@@ -51,6 +51,10 @@ class Card(Base):
     title = Column(String(80), nullable=False, index=True)
     description = Column(String, nullable=True)
     due_date = Column(Date, nullable=True)
+    
+    # --- NUEVO CAMPO: Orden de la tarjeta en la lista ---
+    order = Column(Integer, nullable=False, default=0)
+    # ----------------------------------------------------
 
     list_id = Column(Integer, ForeignKey("lists.id"))
     board_id = Column(Integer, ForeignKey("boards.id"))
@@ -64,5 +68,3 @@ class Card(Base):
     list = relationship("List", back_populates="cards")
     board = relationship("Board", back_populates="cards")
     user = relationship("User", back_populates="cards")
-
-# Fin de app/models.py
