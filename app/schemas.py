@@ -43,6 +43,12 @@ class CardCreate(CardBase):
     list_id: int
     board_id: int
 
+# --- NUEVO: Esquema para mover tarjetas ---
+class CardMove(BaseModel):
+    list_id: int
+    order: int
+# ------------------------------------------
+
 class CardUpdate(BaseModel):
     title: Optional[str] = Field(None, min_length=1, max_length=80)
     description: Optional[str] = None
@@ -52,6 +58,7 @@ class CardUpdate(BaseModel):
 class Card(CardBase):
     id: int
     list_id: int
+    order: int  # <--- NUEVO CAMPO EN LA RESPUESTA
     board_id: int
     user_id: int
     created_at: datetime
