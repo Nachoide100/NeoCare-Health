@@ -6,6 +6,7 @@ __pycache__/
 .env
 Archivos/
 .tmp.driveupload/
+.tmp.drivedownload/
 
 # Frontend
 node_modules/
