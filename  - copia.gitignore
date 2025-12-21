@@ -1,0 +1,13 @@
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+.env
+Archivos/
+.tmp.driveupload/
+.tmp.drivedownload/
+
+# Frontend
+node_modules/
+dist/
