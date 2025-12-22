@@ -98,6 +98,8 @@ pip install -r requirements.txt
 
 #### Opción A: PostgreSQL Local
 
+**Nota sobre la creación automática**: El sistema incluye una lógica de verificación en database.py. Si el servidor PostgreSQL está activo pero la base de datos especificada en DATABASE_URL no existe, el backend intentará crearla automáticamente mediante psycopg2 antes de inicializar los modelos.
+
 Asegúrate de tener PostgreSQL instalado y crea una base de datos:
 
 ```sql
@@ -152,7 +154,42 @@ El servidor backend se iniciará y estará disponible en:
 - **Documentación interactiva (Swagger)**: `http://127.0.0.1:8000/docs`
 - **Documentación alternativa (ReDoc)**: `http://127.0.0.1:8000/redoc`
 
-### Frontend (React + Vite)
+# Frontend (React + Vite)
+
+## 📁 Estructura del Frontend
+```
+frontend/
+├── src/
+│   ├── components/       # Componentes reutilizables (Header, Sidebar, CardItem, etc.)
+│   ├── pages/            # Vistas principales (Login, Register, Board)
+│   ├── services/         # Consumo de API (authService, cardService, listService)
+│   ├── types/            # Definiciones de interfaces TypeScript
+│   ├── App.tsx           # Configuración de rutas
+│   └── main.tsx          # Punto de entrada de la aplicación
+├── .env                  # Variables de entorno (URL de la API)
+└── package.json          # Dependencias y scripts de Node.js
+```
+## 📋 Funcionalidades Destacadas
+
+### Gestión Dinámica de Tableros
+
+- **Visualización por Columnas**: Las tarjetas se agrupan automáticamente por su estado (Listas) en una disposición horizontal con scroll independiente.
+
+- **Contador de Tarjetas**: Cada columna muestra mediante un Chip la cantidad de tareas activas que posee.
+
+### Control Total de Tarjetas (CRUD)
+
+- **Formulario Unificado**: Un único componente CardForm gestiona tanto la creación como la edición, adaptando sus campos dinámicamente.
+
+- **Fecha Límite y Alertas**: Soporte para fechas de vencimiento (due_date). El sistema resalta visualmente en color rojo las tarjetas atrasadas mediante validación de fechas en tiempo real.
+
+### Seguridad y UX
+
+- **Rutas Protegidas**: Implementación de un componente ProtectedRoute que actúa como guardián, impidiendo el acceso al tablero si no existe una sesión activa.
+
+- **Layout Adaptativo**: Barra lateral (Sidebar) colapsable y encabezado (Header) fijo para maximizar el espacio de trabajo en el tablero.
+
+## ⚙️ Configuración del Entorno
 
 En una nueva terminal, navega al directorio `frontend`:
 
@@ -169,6 +206,22 @@ npm run dev
 
 El frontend se iniciará y estará disponible en `http://localhost:5173` (o un puerto similar que Vite indique).
 
+## 🛠️ Detalles de Implementación Técnica
+
+- **Sincronización de Estados**: Al crear, editar o eliminar una tarjeta, el estado de React se actualiza localmente de forma inmediata tras recibir la respuesta exitosa del servidor, garantizando una interfaz fluida.
+
+- **Interacción con la API**: Los servicios (cardService.ts, etc.) encapsulan la lógica de las peticiones fetch, manejando automáticamente los headers de autorización con el token JWT almacenado.
+
+- **Tipado Estricto**: Se utilizan interfaces de TypeScript para asegurar que los datos de Tarjetas, Listas y Usuarios coincidan exactamente con la estructura definida en el Backend.
+
+## 🔒 Seguridad del Sistema
+
+- **Persistencia de Sesión**: El token JWT se gestiona a través de servicios dedicados, permitiendo una validación constante de la identidad del usuario.
+
+- **Validación de Formularios**: Los campos obligatorios (como el título de la tarjeta) están validados en el cliente para prevenir peticiones fallidas al backend.
+
+- **Truncado de Seguridad**: Las contraseñas en el registro son procesadas para cumplir con los estándares de hashing definidos en el backend (bcrypt).
+  
 ## 📚 API Endpoints
 
 Todos los endpoints requieren autenticación JWT excepto los de autenticación. Incluye el token en el header:
@@ -285,6 +338,17 @@ Actualiza parcialmente los campos de una tarjeta específica.
   "due_date": "2026-01-15"
 }
 ```
+#### PATCH `/cards/{card_id}/move` - Mover/Reordenar Tarjeta
+Mueve una tarjeta a una nueva lista o cambia su posición dentro de la misma lista. El sistema reordena automáticamente los índices de las tarjetas afectadas para mantener la integridad.
+
+**Body (JSON):**
+```json
+{
+  "list_id": 2,
+  "order": 1
+}
+```
+**Requiere:** Token JWT
 
 #### DELETE `/cards/{card_id}` - Eliminar Tarjeta
 Elimina una tarjeta específica.
@@ -336,16 +400,19 @@ Estas interfaces te permiten probar todos los endpoints directamente desde el na
 
 El sistema utiliza los siguientes modelos principales:
 
-- **User**: Usuarios del sistema (email, contraseña hasheada)
-- **Board**: Tableros de trabajo pertenecientes a usuarios
-- **List**: Listas/columnas dentro de un tablero (con posición)
-- **Card**: Tarjetas/tareas individuales con título, descripción, fecha de vencimiento
+| Entidad | Descripción | Atributos Clave |
+| :--- | :--- | :--- |
+| **User** | Usuarios del sistema. | `email`, `hashed_password`. |
+| **Board** | Tableros de trabajo. | `title`, `owner_id`. |
+| **List** | Columnas dentro de un tablero. | `title`, `position`. |
+| **Card** | Tareas individuales. | `title`, `description`, `due_date`, `order`. |
 
 Las tablas se crean automáticamente al iniciar la aplicación si no existen.
 
 ## 🔒 Seguridad
 
 - Las contraseñas se almacenan hasheadas usando bcrypt
+- **Truncado de contraseñas:** Debido a las especificaciones del algoritmo `bcrypt` utilizado en `security.py`, las contraseñas se truncan internamente a los primeros 72 caracteres para garantizar un proceso de hashing correcto y evitar errores de desbordamiento.
 - La autenticación utiliza tokens JWT
 - Los endpoints protegidos validan la propiedad de recursos (usuarios solo pueden acceder a sus propios tableros, listas y tarjetas)
 - CORS configurado para permitir comunicación del frontend
@@ -371,6 +438,8 @@ npm run preview
 npm run lint
 ```
 
+
+
 ### Estructura de la Base de Datos
 
 La base de datos se inicializa automáticamente al iniciar la aplicación. Las relaciones principales son:
@@ -382,9 +451,10 @@ La base de datos se inicializa automáticamente al iniciar la aplicación. Las r
 
 ## 📝 Notas Adicionales
 
-- Al registrar un nuevo usuario, se crea automáticamente un "Tablero Principal" con listas por defecto
+- **Flujo de trabajo inicial:** Al registrar un nuevo usuario o crear un tablero, el servicio `setup_service` genera automáticamente las listas: **"Por hacer"**, **"En proceso"** y **"Finalizado"**.
 - Al crear un nuevo tablero, se inicializan automáticamente listas por defecto
 - Las tarjetas incluyen timestamps automáticos (`created_at`, `updated_at`)
+- **Gestión de Orden:** Las tarjetas se insertan automáticamente al final de la lista con un valor `order` calculado (`max + 1`). Al eliminar una tarjeta, el sistema ejecuta un "shift down" de los índices superiores para no dejar huecos en la secuencia.
 - El sistema utiliza migraciones automáticas de SQLAlchemy para crear/actualizar tablas
 
 ## 🤝 Contribuir
