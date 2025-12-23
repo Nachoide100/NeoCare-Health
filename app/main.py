@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import engine
 from app import models
-from app.routers import auth, users, cards, lists, boards
+from app.routers import auth, users, cards, lists, boards, worklogs
 
 # Crear tablas en la base de datos si no existen
 models.Base.metadata.create_all(bind=engine)
@@ -17,12 +17,13 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Configuración de CORS
+# Configuración de CORS - DEBE SER EL PRIMER MIDDLEWARE
 # Permite que el Frontend se comunique con el Backend sin bloqueos de seguridad
 origins = [
     "http://localhost:5173",
     "http://localhost:3000",
     "http://127.0.0.1:5173",
+    "http://127.0.0.1:3000",
 ]
 
 app.add_middleware(
@@ -39,6 +40,7 @@ app.include_router(users.router)
 app.include_router(cards.router)
 app.include_router(lists.router)
 app.include_router(boards.router)
+app.include_router(worklogs.router)
 
 @app.get("/")
 def read_root():

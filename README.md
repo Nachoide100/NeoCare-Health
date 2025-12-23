@@ -17,6 +17,7 @@ Sistema de gestión de tableros tipo Kanban para la gestión interna de NeoCare 
 - **Vite**: Build tool y servidor de desarrollo
 - **Material-UI (MUI)**: Biblioteca de componentes React
 - **React Router**: Enrutamiento para aplicaciones React
+- **dnd-kit** (`@dnd-kit/core`, `@dnd-kit/utilities`): Librería moderna para Drag & Drop accesible en React
 
 ## 📁 Estructura del Proyecto
 
@@ -334,10 +335,11 @@ Actualiza parcialmente los campos de una tarjeta específica.
 {
   "title": "Título Actualizado",
   "description": "Nueva descripción.",
-  "list_id": 2,
   "due_date": "2026-01-15"
 }
 ```
+
+> **Nota:** El cambio de columna y orden de una tarjeta se realiza exclusivamente mediante el endpoint `/cards/{card_id}/move` descrito a continuación, para mantener la integridad del orden.
 #### PATCH `/cards/{card_id}/move` - Mover/Reordenar Tarjeta
 Mueve una tarjeta a una nueva lista o cambia su posición dentro de la misma lista. El sistema reordena automáticamente los índices de las tarjetas afectadas para mantener la integridad.
 
@@ -354,6 +356,68 @@ Mueve una tarjeta a una nueva lista o cambia su posición dentro de la misma lis
 Elimina una tarjeta específica.
 
 **Requiere:** Token JWT
+
+### Worklogs (Registro de Horas) (`/worklogs` y `/cards/{card_id}/worklogs`)
+
+#### POST `/cards/{card_id}/worklogs` - Crear Registro de Horas
+Crea un nuevo registro de horas trabajadas para una tarjeta específica.
+
+**Requiere:** Token JWT
+
+**Body (JSON):**
+```json
+{
+  "card_id": 1,
+  "date": "2025-12-22",
+  "hours": 2.5,
+  "note": "Revisión de código y pruebas"
+}
+```
+
+**Validaciones:**
+- `hours` debe ser mayor a 0 (mínimo recomendado: 0.25)
+- `date` no puede ser una fecha futura
+- `note` máximo 200 caracteres
+
+#### GET `/cards/{card_id}/worklogs` - Listar Horas por Tarjeta
+Obtiene todos los registros de horas de una tarjeta específica, ordenados por fecha descendente.
+
+**Requiere:** Token JWT
+
+**Parámetros:**
+- `card_id` (path): ID de la tarjeta
+
+#### PATCH `/worklogs/{worklog_id}` - Editar Registro de Horas
+Actualiza un registro de horas existente. Solo el autor puede editar su propio registro.
+
+**Requiere:** Token JWT
+
+**Body (JSON - campos opcionales):**
+```json
+{
+  "date": "2025-12-22",
+  "hours": 3.0,
+  "note": "Nota actualizada"
+}
+```
+
+#### DELETE `/worklogs/{worklog_id}` - Eliminar Registro de Horas
+Elimina un registro de horas. Solo el autor puede eliminar su propio registro.
+
+**Requiere:** Token JWT
+
+#### GET `/users/me/worklogs` - Obtener Mis Horas (Vista Semanal)
+Obtiene los registros de horas del usuario actual, filtrados por semana.
+
+**Requiere:** Token JWT
+
+**Parámetros (query):**
+- `week` (opcional): Semana en formato `YYYY-WW` (ej: `2025-01`). Si no se proporciona, devuelve la semana actual.
+
+**Ejemplo:**
+```
+GET /users/me/worklogs?week=2025-01
+```
 
 ## 🧪 Ejemplos de Uso con cURL
 
@@ -387,6 +451,29 @@ curl -X GET "http://127.0.0.1:8000/cards?board_id=1" \
   -H "Authorization: Bearer <TU_TOKEN_JWT>"
 ```
 
+### 5. Añadir horas trabajadas a una tarjeta
+```bash
+curl -X POST "http://127.0.0.1:8000/cards/1/worklogs" \
+  -H "accept: application/json" \
+  -H "Authorization: Bearer <TU_TOKEN_JWT>" \
+  -H "Content-Type: application/json" \
+  -d "{\"card_id\": 1, \"date\": \"2025-12-22\", \"hours\": 2.5, \"note\": \"Desarrollo de funcionalidad\"}"
+```
+
+### 6. Obtener mis horas de la semana actual
+```bash
+curl -X GET "http://127.0.0.1:8000/users/me/worklogs" \
+  -H "accept: application/json" \
+  -H "Authorization: Bearer <TU_TOKEN_JWT>"
+```
+
+### 7. Obtener mis horas de una semana específica
+```bash
+curl -X GET "http://127.0.0.1:8000/users/me/worklogs?week=2025-01" \
+  -H "accept: application/json" \
+  -H "Authorization: Bearer <TU_TOKEN_JWT>"
+```
+
 ## 📖 Documentación de la API
 
 Una vez que el servidor backend esté en funcionamiento, puedes acceder a la documentación interactiva:
@@ -406,6 +493,7 @@ El sistema utiliza los siguientes modelos principales:
 | **Board** | Tableros de trabajo. | `title`, `owner_id`. |
 | **List** | Columnas dentro de un tablero. | `title`, `position`. |
 | **Card** | Tareas individuales. | `title`, `description`, `due_date`, `order`. |
+| **Worklog** | Registro de horas trabajadas. | `card_id`, `user_id`, `date`, `hours`, `note`. |
 
 Las tablas se crean automáticamente al iniciar la aplicación si no existen.
 
@@ -454,7 +542,83 @@ La base de datos se inicializa automáticamente al iniciar la aplicación. Las r
 - **Flujo de trabajo inicial:** Al registrar un nuevo usuario o crear un tablero, el servicio `setup_service` genera automáticamente las listas: **"Por hacer"**, **"En proceso"** y **"Finalizado"**.
 - Al crear un nuevo tablero, se inicializan automáticamente listas por defecto
 - Las tarjetas incluyen timestamps automáticos (`created_at`, `updated_at`)
-- **Gestión de Orden:** Las tarjetas se insertan automáticamente al final de la lista con un valor `order` calculado (`max + 1`). Al eliminar una tarjeta, el sistema ejecuta un "shift down" de los índices superiores para no dejar huecos en la secuencia.
+- **Gestión de Orden:** Las tarjetas se insertan automáticamente al final de la lista con un valor `order` calculado (`max + 1`). Al eliminar una tarjeta, el sistema ejecuta un "shift down" de los índices superiores para no dejar huecos en la secuencia. Al mover una tarjeta entre listas o dentro de la misma, el backend ajusta los `order` afectados siguiendo una estrategia incremental (0, 1, 2, ...) con desplazamientos hacia arriba/abajo según el movimiento.
+
+- **Sistema de Timesheets (Registro de Horas):** Los usuarios pueden registrar las horas trabajadas en cada tarjeta mediante el módulo de Worklogs. Cada registro incluye fecha, horas (mínimo 0.25h), y una nota opcional (máximo 200 caracteres). Los usuarios solo pueden editar o eliminar sus propios registros. La vista "Mis Horas" permite consultar las horas trabajadas por semana con totales diarios y semanales.
+
+## ⏱️ Sistema de Timesheets (Registro de Horas)
+
+### Funcionalidades
+
+El sistema permite a los usuarios registrar las horas trabajadas en cada tarjeta del tablero, facilitando el seguimiento del tiempo invertido en cada tarea.
+
+#### Vista de Detalle de Tarjeta
+
+Al hacer clic en una tarjeta, se abre un diálogo que muestra:
+- Información completa de la tarjeta (título, descripción, fecha límite)
+- Sección "Horas Trabajadas" con:
+  - Listado cronológico de todos los registros de horas
+  - Total de horas registradas en la tarjeta
+  - Botones para editar/eliminar solo los registros propios
+
+#### Añadir Horas
+
+1. Abrir el detalle de una tarjeta
+2. Hacer clic en "Añadir Horas"
+3. Completar el formulario:
+   - **Fecha**: Seleccionar la fecha (no puede ser futura)
+   - **Horas**: Número decimal (mínimo 0.25)
+   - **Nota**: Opcional, máximo 200 caracteres
+4. Guardar
+
+#### Vista "Mis Horas"
+
+Accesible desde el menú lateral, muestra:
+- Listado de todas las horas registradas por el usuario
+- Filtro por semana (formato YYYY-WW)
+- Totales por día
+- Total semanal destacado
+- Información de la tarjeta asociada a cada registro
+
+### Validaciones
+
+**Cliente (Frontend):**
+- Horas > 0 y mínimo 0.25
+- Fecha no futura
+- Nota máximo 200 caracteres
+
+**Servidor (Backend):**
+- Mismas validaciones que el cliente
+- Solo el autor puede editar/eliminar sus registros
+- Acceso a tarjetas del mismo tablero del usuario
+
+### Permisos
+
+- **Visualizar worklogs**: Todos los miembros del tablero pueden ver los registros de horas de una tarjeta
+- **Crear worklog**: Cualquier miembro del tablero puede añadir horas
+- **Editar/Eliminar**: Solo el autor del registro puede modificar o eliminar sus propias horas
+
+## 🎯 Drag & Drop en el Frontend
+
+### Flujo de funcionamiento
+
+1. El usuario arrastra una tarjeta (`CardItem`) dentro del tablero.
+2. `dnd-kit` detecta el inicio del arrastre y asocia la tarjeta a su lista origen.
+3. Al soltar sobre una columna (`ListColumn`), se calcula la nueva `list_id` y un `order` al final de la columna destino.
+4. El frontend actualiza el estado local de forma optimista para que el cambio se vea inmediatamente.
+5. Se invoca al endpoint `PATCH /cards/{id}/move` con `{ "list_id": <destino>, "order": <nuevo_orden> }`.
+6. Si la API responde correctamente, se sincroniza la tarjeta con los datos devueltos por el backend.
+7. Si ocurre un error, el frontend revierte el estado al valor anterior y muestra un mensaje visual de error.
+
+### Estrategia de ordenamiento elegida
+
+- Cada columna mantiene sus tarjetas con un `order` entero incremental (`0, 1, 2, ...`).
+- Al crear una tarjeta nueva, se inserta al final de la lista (`max(order) + 1`).
+- Al eliminar una tarjeta, los `order` de las tarjetas siguientes se decrementan en 1 (estrategia "shift down").
+- Al mover una tarjeta, el backend:
+  - Cierra el hueco en la lista origen.
+  - Abre espacio en la lista destino si es necesario.
+  - Asigna el nuevo `order` a la tarjeta movida.
 - El sistema utiliza migraciones automáticas de SQLAlchemy para crear/actualizar tablas
 
 ## 🤝 Contribuir

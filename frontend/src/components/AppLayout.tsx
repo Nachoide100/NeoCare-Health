@@ -1,37 +1,99 @@
-import React from 'react';
-import { Box, CssBaseline, Toolbar } from '@mui/material';
-import { Outlet } from 'react-router-dom';
-import Header from './Header';
-import Sidebar from './Sidebar';
+import React from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { logout } from "../services/authService";
+import {
+  Box,
+  Drawer,
+  AppBar,
+  Toolbar,
+  Typography,
+  List,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  CssBaseline,
+} from "@mui/material";
+import DashboardIcon from "@mui/icons-material/Dashboard";
+import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import LogoutIcon from "@mui/icons-material/Logout";
 
-const AppLayout: React.FC = () => {
-  const [isSidebarOpen, setSidebarOpen] = React.useState(true);
+const drawerWidth = 240;
 
-  const handleSidebarToggle = () => {
-    setSidebarOpen(!isSidebarOpen);
+interface AppLayoutProps {
+  children: React.ReactNode;
+}
+
+const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/");
   };
 
   return (
-    <Box sx={{ display: 'flex' }}>
+    <Box sx={{ display: "flex" }}>
       <CssBaseline />
-      <Header onSidebarToggle={handleSidebarToggle} />
-      <Sidebar open={isSidebarOpen} />
-      <Box
-        component="main"
+      <AppBar
+        position="fixed"
+        sx={{ width: `calc(100% - ${drawerWidth}px)`, ml: `${drawerWidth}px` }}
+      >
+        <Toolbar>
+          <Typography variant="h6" noWrap component="div">
+            NeoCare Dashboard
+          </Typography>
+        </Toolbar>
+      </AppBar>
+      <Drawer
         sx={{
-          flexGrow: 1,
-          p: 3,
-          width: { sm: `calc(100% - ${isSidebarOpen ? 240 : 0}px)` },
-          transition: (theme) =>
-            theme.transitions.create('margin', {
-              easing: theme.transitions.easing.sharp,
-              duration: theme.transitions.duration.leavingScreen,
-            }),
-          marginLeft: { sm: `-${isSidebarOpen ? 0 : '240px'}` },
+          width: drawerWidth,
+          flexShrink: 0,
+          "& .MuiDrawer-paper": {
+            width: drawerWidth,
+            boxSizing: "border-box",
+          },
         }}
+        variant="permanent"
+        anchor="left"
       >
         <Toolbar />
-        <Outlet />
+        <List>
+          <ListItemButton
+            selected={location.pathname === "/board"}
+            onClick={() => navigate("/board")}
+          >
+            <ListItemIcon>
+              <DashboardIcon />
+            </ListItemIcon>
+            <ListItemText primary="Mi Tablero" />
+          </ListItemButton>
+          <ListItemButton
+            selected={location.pathname === "/my-hours"}
+            onClick={() => navigate("/my-hours")}
+          >
+            <ListItemIcon>
+              <AccessTimeIcon />
+            </ListItemIcon>
+            <ListItemText primary="Mis Horas" />
+          </ListItemButton>
+        </List>
+        <Box sx={{ flexGrow: 1 }} />
+        <List>
+          <ListItemButton onClick={handleLogout}>
+            <ListItemIcon>
+              <LogoutIcon />
+            </ListItemIcon>
+            <ListItemText primary="Cerrar Sesión" />
+          </ListItemButton>
+        </List>
+      </Drawer>
+      <Box
+        component="main"
+        sx={{ flexGrow: 1, bgcolor: "background.default", p: 3 }}
+      >
+        <Toolbar />
+        {children}
       </Box>
     </Box>
   );

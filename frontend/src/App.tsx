@@ -1,8 +1,9 @@
 import { Routes, Route } from "react-router-dom";
 import Login from "./pages/Login";
-import Register from "./pages/Register"; // Import the new Register component
+import Register from "./pages/Register";
 import Board from "./pages/Board";
-import ProtectedRoute from "./components/ProtectedRoute"; // 👈 1. Importar el guardián
+import MyHours from "./pages/MyHours";
+import ProtectedRoute from "./components/ProtectedRoute";
 import "./App.css";
 
 function App() {
@@ -13,13 +14,20 @@ function App() {
       {/* Ruta pública para el registro */}
       <Route path="/register" element={<Register />} />
 
-      {/* Ruta protegida para el tablero */}
+      {/* Rutas protegidas */}
       <Route
         path="/board"
         element={
-          // 2. Envolver la página Board con el guardián
           <ProtectedRoute>
             <Board />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/my-hours"
+        element={
+          <ProtectedRoute>
+            <MyHours />
           </ProtectedRoute>
         }
       />

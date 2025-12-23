@@ -20,6 +20,43 @@ export const cardService = {
         return await response.json();
     },
 
+    // Obtener una tarjeta específica
+    fetchCard: async (cardId: number): Promise<Card> => {
+        const response = await fetch(`${API_URL}/cards/${cardId}`, {
+            headers: getHeaders()
+        });
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.detail || "Error al cargar la tarjeta");
+        }
+        return await response.json();
+    },
+
+    // Mover tarjeta (Drag & Drop)
+    moveCard: async (
+        cardId: number,
+        payload: { list_id: number; order: number }
+    ): Promise<Card> => {
+        const response = await fetch(`${API_URL}/cards/${cardId}/move`, {
+            method: "PATCH",
+            headers: getHeaders(),
+            body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            let errorData;
+            try {
+                errorData = JSON.parse(errorText);
+            } catch {
+                errorData = { detail: errorText || "Error al mover la tarjeta" };
+            }
+            throw new Error(errorData.detail || "Error al mover la tarjeta");
+        }
+
+        return await response.json();
+    },
+
     // Crear tarjeta (La barra final '/' en la URL es CRÍTICA para evitar errores de CORS)
     createCard: async (card: Omit<Card, "id" | "user_id" | "created_at" | "updated_at">): Promise<Card> => {
         const response = await fetch(`${API_URL}/cards/`, { 
