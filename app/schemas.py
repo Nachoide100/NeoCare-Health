@@ -2,8 +2,9 @@
 Módulo de esquemas Pydantic para la validación de datos.
 Define las estructuras de entrada y salida para la API.
 """
+from __future__ import annotations
 from datetime import date, datetime
-from typing import List, Optional
+from typing import List, Optional, Annotated, Union
 
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
@@ -20,10 +21,8 @@ class User(UserBase):
     """Esquema de respuesta de usuario."""
     id: int
     is_active: bool
-
-    class Config:
-        """Configuración de Pydantic."""
-        from_attributes = True
+    
+    model_config = {"from_attributes": True}
 
 # --- BOARD ---
 class BoardBase(BaseModel):
@@ -37,10 +36,8 @@ class BoardGet(BoardBase):
     """Esquema de respuesta de tableros."""
     id: int
     owner_id: int
-
-    class Config:
-        """Configuración de Pydantic."""
-        from_attributes = True
+    
+    model_config = {"from_attributes": True}
 
 # --- TOKEN ---
 class Token(BaseModel):
@@ -81,10 +78,8 @@ class Card(CardBase):
     user_id: int
     created_at: datetime
     updated_at: Optional[datetime] = None
-
-    class Config:
-        """Configuración de Pydantic."""
-        from_attributes = True
+    
+    model_config = {"from_attributes": True}
 
 # --- LIST (Renombrado para evitar conflicto con typing.List) ---
 class CardInList(BaseModel):
@@ -94,10 +89,8 @@ class CardInList(BaseModel):
     description: Optional[str] = None
     order: int
     due_date: Optional[date] = None
-
-    class Config:
-        """Configuración de Pydantic."""
-        from_attributes = True
+    
+    model_config = {"from_attributes": True}
 
 
 class ListSchema(BaseModel):
@@ -107,10 +100,8 @@ class ListSchema(BaseModel):
     position: int
     board_id: int
     cards: List[CardInList] = []
-
-    class Config:
-        """Configuración de Pydantic."""
-        from_attributes = True
+    
+    model_config = {"from_attributes": True}
 
 # --- WORKLOG ---
 class WorklogBase(BaseModel):
@@ -127,8 +118,8 @@ class WorklogUpdate(BaseModel):
     """Esquema para actualizar registros de horas - todos los campos opcionales."""
     model_config = {"extra": "forbid"}
     
-    date: Optional[date] = None
-    hours: Optional[float] = None  
+    date: Optional[str] = None  # Aceptar string de fecha ISO y parsear luego
+    hours: Optional[float] = None
     note: Optional[str] = None
 
 class Worklog(WorklogBase):
@@ -138,10 +129,8 @@ class Worklog(WorklogBase):
     user_id: int
     created_at: datetime
     updated_at: Optional[datetime] = None
-
-    class Config:
-        """Configuración de Pydantic."""
-        from_attributes = True
+    
+    model_config = {"from_attributes": True}
 
 
 class WorklogResponse(BaseModel):
@@ -155,7 +144,5 @@ class WorklogResponse(BaseModel):
     user_id: int
     created_at: datetime
     updated_at: Optional[datetime] = None
-
-    class Config:
-        """Configuración de Pydantic."""
-        from_attributes = True
+    
+    model_config = {"from_attributes": True}

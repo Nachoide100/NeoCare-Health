@@ -3,8 +3,9 @@ Módulo de rutas para la gestión de Worklogs (registro de horas).
 Maneja la creación, consulta, actualización y borrado de registros de tiempo.
 """
 from typing import List
+from datetime import date
 
-from fastapi import APIRouter, Depends, HTTPException, Body
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 from app import database, models, schemas, security
@@ -94,7 +95,7 @@ def create_worklog(
 @router.patch("/{worklog_id}", response_model=schemas.Worklog)
 def update_worklog(
     worklog_id: int,
-    worklog_update: dict = Body(...),
+    worklog_update: schemas.WorklogUpdate,
     db: Session = Depends(database.get_db),
     current_user: models.User = Depends(security.get_current_user)
 ):
@@ -109,14 +110,17 @@ def update_worklog(
         raise HTTPException(status_code=403, detail="No autorizado")
 
     try:
-        # Procesar solo los campos que vienen en la solicitud
-        if "date" in worklog_update and worklog_update["date"]:
-            db_worklog.date = worklog_update["date"]
-        if "hours" in worklog_update and worklog_update["hours"]:
-            db_worklog.hours = worklog_update["hours"]
-        if "note" in worklog_update:
-            db_worklog.note = worklog_update["note"]
-        
+        # Obtener solo los campos enviados por el cliente (Pydantic v2)
+        update_data = worklog_update.model_dump(exclude_unset=True)
+
+        if "date" in update_data:
+            # Parsear la fecha string a date object
+            db_worklog.date = date.fromisoformat(update_data["date"]) if update_data["date"] else None
+        if "hours" in update_data:
+            db_worklog.hours = update_data["hours"]
+        if "note" in update_data:
+            db_worklog.note = update_data["note"]
+
         db.commit()
         db.refresh(db_worklog)
         return db_worklog
