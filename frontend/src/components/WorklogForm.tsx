@@ -17,6 +17,7 @@ interface WorklogFormProps {
   onSubmit: (worklog: WorklogCreate | WorklogUpdate) => Promise<void>;
   initialWorklog?: Worklog | null;
   cardId: number;
+  isSaving?: boolean;
 }
 
 const WorklogForm: React.FC<WorklogFormProps> = ({
@@ -25,6 +26,7 @@ const WorklogForm: React.FC<WorklogFormProps> = ({
   onSubmit,
   initialWorklog,
   cardId,
+  isSaving = false,
 }) => {
   const [date, setDate] = useState("");
   const [hours, setHours] = useState("");
@@ -157,9 +159,9 @@ const WorklogForm: React.FC<WorklogFormProps> = ({
         </Box>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>Cancelar</Button>
-        <Button onClick={handleSubmit} variant="contained" color="primary">
-          {initialWorklog ? "Guardar Cambios" : "Añadir Horas"}
+        <Button onClick={onClose} disabled={isSaving}>Cancelar</Button>
+        <Button onClick={handleSubmit} variant="contained" color="primary" disabled={isSaving}>
+          {isSaving ? "Guardando..." : initialWorklog ? "Guardar Cambios" : "Añadir Horas"}
         </Button>
       </DialogActions>
     </Dialog>

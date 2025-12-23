@@ -8,6 +8,11 @@ import {
   Chip,
   Divider,
   Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Snackbar,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
@@ -29,6 +34,11 @@ const WorklogList: React.FC<WorklogListProps> = ({ cardId }) => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingWorklog, setEditingWorklog] = useState<Worklog | null>(null);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
+  const [showSuccess, setShowSuccess] = useState(false);
 
   useEffect(() => {
     loadWorklogs();
@@ -58,26 +68,51 @@ const WorklogList: React.FC<WorklogListProps> = ({ cardId }) => {
   };
 
   const handleCreate = async (worklog: WorklogCreate) => {
-    await worklogService.createWorklog(cardId, worklog);
-    await loadWorklogs();
+    try {
+      setSaving(true);
+      await worklogService.createWorklog(cardId, worklog);
+      await loadWorklogs();
+      setIsFormOpen(false);
+      setSuccessMessage("Registro de horas creado exitosamente");
+      setShowSuccess(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al crear el registro");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleUpdate = async (worklog: WorklogUpdate) => {
     if (!editingWorklog) return;
-    await worklogService.updateWorklog(editingWorklog.id, worklog);
-    await loadWorklogs();
-    setEditingWorklog(null);
+    try {
+      setSaving(true);
+      await worklogService.updateWorklog(editingWorklog.id, worklog);
+      await loadWorklogs();
+      setEditingWorklog(null);
+      setIsFormOpen(false);
+      setSuccessMessage("Registro de horas actualizado exitosamente");
+      setShowSuccess(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al actualizar el registro");
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleDelete = async (worklogId: number) => {
-    if (!window.confirm("¿Estás seguro de que quieres eliminar este registro de horas?")) {
-      return;
-    }
+  const handleDeleteConfirm = async () => {
+    if (deleteConfirmId === null) return;
     try {
-      await worklogService.deleteWorklog(worklogId);
+      setDeleting(true);
+      await worklogService.deleteWorklog(deleteConfirmId);
       await loadWorklogs();
+      setSuccessMessage("Registro de horas eliminado exitosamente");
+      setShowSuccess(true);
+      setDeleteConfirmId(null);
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Error al eliminar el registro");
+      setError(err instanceof Error ? err.message : "Error al eliminar el registro");
+      setDeleteConfirmId(null);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -163,13 +198,15 @@ const WorklogList: React.FC<WorklogListProps> = ({ cardId }) => {
                         setEditingWorklog(worklog);
                         setIsFormOpen(true);
                       }}
+                      disabled={saving || deleting}
                     >
                       <EditIcon fontSize="small" />
                     </IconButton>
                     <IconButton
                       size="small"
-                      onClick={() => handleDelete(worklog.id)}
+                      onClick={() => setDeleteConfirmId(worklog.id)}
                       color="error"
+                      disabled={saving || deleting}
                     >
                       <DeleteIcon fontSize="small" />
                     </IconButton>
@@ -190,6 +227,38 @@ const WorklogList: React.FC<WorklogListProps> = ({ cardId }) => {
         onSubmit={editingWorklog ? handleUpdate : handleCreate}
         initialWorklog={editingWorklog}
         cardId={cardId}
+        isSaving={saving}
+      />
+
+      <Dialog
+        open={deleteConfirmId !== null}
+        onClose={() => setDeleteConfirmId(null)}
+        aria-labelledby="delete-dialog-title"
+      >
+        <DialogTitle id="delete-dialog-title">Confirmar eliminación</DialogTitle>
+        <DialogContent>
+          ¿Estás seguro de que quieres eliminar este registro de horas? Esta acción no se puede deshacer.
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteConfirmId(null)} disabled={deleting}>
+            Cancelar
+          </Button>
+          <Button
+            onClick={handleDeleteConfirm}
+            color="error"
+            variant="contained"
+            disabled={deleting}
+          >
+            {deleting ? "Eliminando..." : "Eliminar"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Snackbar
+        open={showSuccess}
+        autoHideDuration={4000}
+        onClose={() => setShowSuccess(false)}
+        message={successMessage}
       />
     </Box>
   );

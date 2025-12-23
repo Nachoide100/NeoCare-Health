@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -39,8 +39,13 @@ const CardDetail: React.FC<CardDetailProps> = ({
   onCardUpdated,
 }) => {
   const [isEditFormOpen, setIsEditFormOpen] = useState(false);
+  const [displayCard, setDisplayCard] = useState<Card | null>(card);
 
-  if (!card) return null;
+  useEffect(() => {
+    setDisplayCard(card);
+  }, [card]);
+
+  if (!card || !displayCard) return null;
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return null;
@@ -53,31 +58,31 @@ const CardDetail: React.FC<CardDetailProps> = ({
         <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           {/* TÍTULO CORREGIDO: Trae el título de la base de datos */}
           <Typography variant="h6" component="div">
-            {card.title}
+            {displayCard.title}
           </Typography>
           <Box>
             <IconButton onClick={() => setIsEditFormOpen(true)} size="small" color="primary">
               <EditIcon />
             </IconButton>
-            <IconButton onClick={() => { onDelete(card.id); onClose(); }} size="small" color="error">
+            <IconButton onClick={() => { onDelete(displayCard.id); onClose(); }} size="small" color="error">
               <DeleteIcon />
             </IconButton>
           </Box>
         </DialogTitle>
         <DialogContent dividers>
-          {card.description && (
+          {displayCard.description && (
             <Typography variant="body1" sx={{ mb: 2 }}>
-              {card.description}
+              {displayCard.description}
             </Typography>
           )}
-          {card.due_date && (
+          {displayCard.due_date && (
             <Chip
-              label={`Fecha límite: ${formatDate(card.due_date)}`}
+              label={`Fecha límite: ${formatDate(displayCard.due_date)}`}
               size="small"
               sx={{ mb: 2 }}
             />
           )}
-          <WorklogList cardId={card.id} />
+          <WorklogList cardId={displayCard.id} />
         </DialogContent>
         <DialogActions>
           <Button onClick={onClose}>Cerrar</Button>
@@ -95,14 +100,16 @@ const CardDetail: React.FC<CardDetailProps> = ({
               list_id: cardData.list_id,
               due_date: cardData.due_date || undefined,
             };
-            await cardService.updateCard(card.id, updateData);
+            const updatedCard = await cardService.updateCard(displayCard.id, updateData);
+            // Actualiza el card mostrado en el modal con los nuevos datos
+            setDisplayCard(updatedCard);
             onCardUpdated(); // Recarga los datos en el tablero
             setIsEditFormOpen(false);
           } catch (error) {
             alert(error instanceof Error ? error.message : "Error al actualizar");
           }
         }}
-        initialCard={card}
+        initialCard={displayCard}
         boardLists={boardLists}
         boardId={boardId}
       />
