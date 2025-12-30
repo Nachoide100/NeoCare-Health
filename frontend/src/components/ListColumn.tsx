@@ -40,8 +40,8 @@ const ListColumn: React.FC<ListColumnProps> = ({
       ref={setNodeRef}
       elevation={0}
       sx={{
-        minWidth: 300,
-        width: 300,
+        minWidth: { xs: "100%", md: 300 },
+        width: { xs: "100%", md: 300 },
         backgroundColor: list.color || "#ebecf0",
         padding: 2,
         borderRadius: 2,

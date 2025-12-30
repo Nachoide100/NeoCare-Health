@@ -17,7 +17,8 @@ import {
 } from "@mui/material";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import { worklogService } from "../services/worklogService";
-import type { Worklog, Card } from "../types"; // Asegúrate de importar Card
+import type { Worklog } from "../types";
+import type { Card } from "../types"; // Asegúrate de importar Card
 import AppLayout from "../components/AppLayout";
 
 const MyHours: React.FC = () => {
@@ -85,15 +86,23 @@ const MyHours: React.FC = () => {
 
   return (
     <AppLayout>
-      <Box sx={{ p: 3 }}>
+      <Box sx={{ p: { xs: 1, sm: 2, md: 3 } }}>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 3 }}>
           <AccessTimeIcon fontSize="large" color="primary" />
-          <Typography variant="h4" fontWeight="bold">
+          <Typography variant="h4" component="h1" fontWeight="bold">
             Mis Horas Trabajadas
           </Typography>
         </Box>
 
-        <Box sx={{ mb: 3, display: "flex", gap: 2, alignItems: "center" }}>
+        <Box
+          sx={{
+            mb: 3,
+            display: "flex",
+            gap: 2,
+            alignItems: "center",
+            flexWrap: "wrap",
+          }}
+        >
           <TextField
             label="Semana (YYYY-WW)"
             value={weekFilter}
@@ -101,6 +110,7 @@ const MyHours: React.FC = () => {
             placeholder={getCurrentWeek()}
             helperText="Deja vacío para ver la semana actual"
             size="small"
+            style={{ flexGrow: 1 }}
           />
           <Button
             variant="outlined"
@@ -133,7 +143,7 @@ const MyHours: React.FC = () => {
             </Paper>
 
             <TableContainer component={Paper}>
-              <Table>
+              <Table sx={{ minWidth: 650 }} aria-label="simple table">
                 <TableHead>
                   <TableRow>
                     <TableCell><strong>Fecha</strong></TableCell>
@@ -192,3 +202,4 @@ const MyHours: React.FC = () => {
 };
 
 export default MyHours;
+

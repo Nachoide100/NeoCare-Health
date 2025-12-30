@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.database import engine
 from app import models
 from app.routers import auth, users, cards, lists, boards, worklogs
+from app.routers import report
 
 # Crear tablas en la base de datos si no existen
 models.Base.metadata.create_all(bind=engine)
@@ -41,6 +42,7 @@ app.include_router(cards.router)
 app.include_router(lists.router)
 app.include_router(boards.router)
 app.include_router(worklogs.router)
+app.include_router(report.router)
 
 @app.get("/")
 def read_root():

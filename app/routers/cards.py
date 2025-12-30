@@ -21,8 +21,11 @@ def create_card(
 ):
     """Crea una tarjeta y la pone al final de la lista."""
     board = db.query(models.Board).filter(models.Board.id == card.board_id).first()
-    if not board or board.owner_id != current_user.id:
-        raise HTTPException(status_code=403, detail="No tienes permiso o el tablero no existe")
+    if not board:
+        # Tablero inexistente -> Bad Request (según tests)
+        raise HTTPException(status_code=400, detail="Tablero no encontrado")
+    if board.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="No tienes permiso para este tablero")
 
     last_card = db.query(models.Card).filter(
         models.Card.list_id == card.list_id
@@ -51,6 +54,12 @@ def read_cards(
     current_user: models.User = Depends(security.get_current_user)
 ):
     """Obtiene todas las tarjetas de un tablero."""
+    # Validar existencia y permisos del tablero
+    board = db.query(models.Board).filter(models.Board.id == board_id).first()
+    if not board or board.owner_id != current_user.id:
+        # Para el caso de tablero inexistente o no autorizado devolvemos 404
+        raise HTTPException(status_code=404, detail="Tablero no encontrado o sin permiso")
+
     return db.query(models.Card).filter(models.Card.board_id == board_id).all()
 
 @router.patch("/{card_id}", response_model=schemas.Card)
@@ -80,6 +89,22 @@ def update_card(
     except SQLAlchemyError:
         db.rollback()
         raise HTTPException(status_code=500, detail="Error al guardar cambios")
+
+
+@router.get("/{card_id}", response_model=schemas.Card)
+def get_card(
+    card_id: int,
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(security.get_current_user)
+):
+    db_card = db.query(models.Card).filter(models.Card.id == card_id).first()
+    if not db_card:
+        raise HTTPException(status_code=404, detail="Tarjeta no encontrada")
+    # validar que el usuario tenga acceso al tablero
+    board = db.query(models.Board).filter(models.Board.id == db_card.board_id).first()
+    if not board or board.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="No tienes permiso para ver esta tarjeta")
+    return db_card
 
 @router.patch("/{card_id}/move", response_model=schemas.Card)
 def move_card(
@@ -150,4 +175,6 @@ def delete_card(
     ).update({"order": models.Card.order - 1}, synchronize_session=False)
     
     db.commit()
-    return {"detail": "Tarjeta eliminada"}
+    # Devolver 204 No Content para cumplir expectativas de API
+    from fastapi import Response
+    return Response(status_code=204)

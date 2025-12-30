@@ -199,9 +199,12 @@ const BoardContent: React.FC<{ boardId: number }> = ({ boardId }) => {
       <Box
         sx={{
           display: "flex",
-          flexDirection: "row",
-          overflowX: "auto",
-          height: "calc(100vh - 80px)",
+          flexDirection: { xs: "column", md: "row" },
+          overflowX: { xs: "hidden", md: "auto" },
+          height: {
+            xs: "auto",
+            md: "calc(100vh - 64px - 48px)",
+          },
           padding: 2,
           gap: 2,
         }}

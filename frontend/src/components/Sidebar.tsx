@@ -1,21 +1,31 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 interface SidebarProps {
   open: boolean;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ open }) => {
-  if (!open) return null; // Simple control for visibility based on 'open' prop
+  if (!open) return null;
 
   return (
-    <div style={{ width: '240px', background: '#f4f5f7', padding: '16px', boxSizing: 'border-box' }}>
-      {/* Sidebar content goes here */}
-      <h3>Sidebar</h3>
-      <ul>
-        <li>Menu Item 1</li>
-        <li>Menu Item 2</li>
+    <nav style={{ width: '240px', background: '#f4f5f7', padding: '16px', boxSizing: 'border-box' }}>
+      <h3 style={{ marginTop: 0 }}>NeoCare</h3>
+      <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+        <li style={{ marginBottom: '8px' }}>
+          <Link to="/board">Mi Tablero</Link>
+        </li>
+        <li style={{ marginBottom: '8px' }}>
+          <Link to="/my-hours">Mis Horas</Link>
+        </li>
+        <li style={{ marginBottom: '8px' }}>
+          <Link to="/report">Informe</Link>
+        </li>
+        <li style={{ marginTop: '16px' }}>
+          <Link to="/logout">Cerrar Sesión</Link>
+        </li>
       </ul>
-    </div>
+    </nav>
   );
 };
 

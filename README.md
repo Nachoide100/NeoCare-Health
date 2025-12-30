@@ -29,18 +29,21 @@ NeoCare-Health/
 │   │   ├── users.py       # Gestión de usuarios
 │   │   ├── boards.py      # Gestión de tableros
 │   │   ├── lists.py       # Gestión de listas
-│   │   └── cards.py       # Gestión de tarjetas
-│   ├── models.py          # Modelos de base de datos
-│   ├── schemas.py         # Esquemas Pydantic
+│   │   ├── cards.py       # Gestión de tarjetas
+│   │   ├── worklogs.py    # Gestión de horas trabajadas
+│   │   └── report.py      # Endpoints para informes
+│   ├── services/          # Lógica de negocio (ej. setup_service, date_utils)
+│   ├── models.py          # Modelos de base de datos (SQLAlchemy)
+│   ├── schemas.py         # Esquemas de validación (Pydantic)
 │   ├── database.py        # Configuración de base de datos
-│   ├── security.py        # Utilidades de seguridad
+│   ├── security.py        # Utilidades de seguridad (JWT, hashing)
 │   └── main.py            # Aplicación principal FastAPI
 ├── frontend/              # Frontend (React + TypeScript)
 │   ├── src/
-│   │   ├── components/    # Componentes React
-│   │   ├── pages/         # Páginas de la aplicación
-│   │   ├── services/      # Servicios API
-│   │   └── types/         # Tipos TypeScript
+│   │   ├── components/    # Componentes React reutilizables
+│   │   ├── pages/         # Páginas de la aplicación (vistas)
+│   │   ├── services/      # Servicios para consumir la API
+│   │   └── types/         # Definiciones de tipos y interfaces
 │   └── package.json
 ├── requirements.txt       # Dependencias Python
 └── README.md
@@ -97,7 +100,7 @@ pip install -r requirements.txt
 
 ### 5. Configuración de la Base de Datos
 
-#### Opción A: PostgreSQL Local
+#### PostgreSQL Local
 
 **Nota sobre la creación automática**: El sistema incluye una lógica de verificación en database.py. Si el servidor PostgreSQL está activo pero la base de datos especificada en DATABASE_URL no existe, el backend intentará crearla automáticamente mediante psycopg2 antes de inicializar los modelos.
 
@@ -105,20 +108,6 @@ Asegúrate de tener PostgreSQL instalado y crea una base de datos:
 
 ```sql
 CREATE DATABASE necocare_health;
-```
-
-#### Opción B: PostgreSQL con Docker (Recomendado)
-
-Si no tienes PostgreSQL instalado, puedes usar Docker:
-
-```bash
-docker run --name postgres-neocare -e POSTGRES_PASSWORD=mysecretpassword -p 5432:5432 -d postgres
-```
-
-Luego crea la base de datos:
-
-```bash
-docker exec -it postgres-neocare psql -U postgres -c "CREATE DATABASE necocare_health;"
 ```
 
 ### 6. Archivo de Entorno `.env`
@@ -155,21 +144,16 @@ El servidor backend se iniciará y estará disponible en:
 - **Documentación interactiva (Swagger)**: `http://127.0.0.1:8000/docs`
 - **Documentación alternativa (ReDoc)**: `http://127.0.0.1:8000/redoc`
 
-# Frontend (React + Vite)
+### Frontend (React)
+En una nueva terminal, navega al directorio `frontend`:
 
-## 📁 Estructura del Frontend
+```bash
+cd frontend
+npm install
+npm run dev
 ```
-frontend/
-├── src/
-│   ├── components/       # Componentes reutilizables (Header, Sidebar, CardItem, etc.)
-│   ├── pages/            # Vistas principales (Login, Register, Board)
-│   ├── services/         # Consumo de API (authService, cardService, listService)
-│   ├── types/            # Definiciones de interfaces TypeScript
-│   ├── App.tsx           # Configuración de rutas
-│   └── main.tsx          # Punto de entrada de la aplicación
-├── .env                  # Variables de entorno (URL de la API)
-└── package.json          # Dependencias y scripts de Node.js
-```
+El frontend se iniciará y estará disponible en `http://localhost:5173` (o un puerto similar que Vite indique).
+
 ## 📋 Funcionalidades Destacadas
 
 ### Gestión Dinámica de Tableros
@@ -490,10 +474,10 @@ El sistema utiliza los siguientes modelos principales:
 | Entidad | Descripción | Atributos Clave |
 | :--- | :--- | :--- |
 | **User** | Usuarios del sistema. | `email`, `hashed_password`. |
-| **Board** | Tableros de trabajo. | `title`, `owner_id`. |
-| **List** | Columnas dentro de un tablero. | `title`, `position`. |
-| **Card** | Tareas individuales. | `title`, `description`, `due_date`, `order`. |
-| **Worklog** | Registro de horas trabajadas. | `card_id`, `user_id`, `date`, `hours`, `note`. |
+| **Board** | Tableros de trabajo de un usuario. | `title`, `owner_id`. |
+| **List** | Columnas dentro de un tablero (estados). | `title`, `position`, `board_id`. |
+| **Card** | Tareas individuales con detalles. | `title`, `description`, `due_date`, `order`. |
+| **Worklog**| Registro de horas trabajadas en una tarjeta. | `card_id`, `user_id`, `date`, `hours`. |
 
 Las tablas se crean automáticamente al iniciar la aplicación si no existen.
 
@@ -502,7 +486,7 @@ Las tablas se crean automáticamente al iniciar la aplicación si no existen.
 - Las contraseñas se almacenan hasheadas usando bcrypt
 - **Truncado de contraseñas:** Debido a las especificaciones del algoritmo `bcrypt` utilizado en `security.py`, las contraseñas se truncan internamente a los primeros 72 caracteres para garantizar un proceso de hashing correcto y evitar errores de desbordamiento.
 - La autenticación utiliza tokens JWT
-- Los endpoints protegidos validan la propiedad de recursos (usuarios solo pueden acceder a sus propios tableros, listas y tarjetas)
+- Los endpoints protegidos validan la propiedad de recursos (usuarios solo pueden acceder a sus propios tableros, informes, listas y tarjetas)
 - CORS configurado para permitir comunicación del frontend
 
 ## 🛠️ Desarrollo
@@ -620,6 +604,126 @@ Accesible desde el menú lateral, muestra:
   - Abre espacio en la lista destino si es necesario.
   - Asigna el nuevo `order` a la tarjeta movida.
 - El sistema utiliza migraciones automáticas de SQLAlchemy para crear/actualizar tablas
+
+### 📊 Informe Semanal
+
+El módulo de informes semanales proporciona una vista consolidada para analizar el progreso, la carga de trabajo y la eficiencia del equipo. Se accede a través de la ruta `/report`.
+
+#### Funcionalidades Principales
+
+*   **Selector de Semana**: Permite filtrar el informe por cualquier semana del año. Por defecto, muestra la semana actual.
+*   **Resumen Visual**: Muestra tarjetas de resumen para tareas **Completadas** (verde), **Vencidas** (rojo) y **Nuevas** (azul), incluyendo un contador y una lista desplegable con los detalles de cada tarea.
+*   **Análisis de Horas**: Incluye dos tablas detalladas:
+    *   **Horas por Persona**: Muestra el total de horas y tareas por usuario.
+    *   **Horas por Tarjeta**: Muestra el total de horas por tarea, con opción de ordenamiento.
+*   **Exportación a CSV**: Permite descargar los datos de las tablas de horas en formato CSV.
+
+#### Endpoints del API (`/report`)
+
+##### `GET /report/{board_id}/summary`
+
+Obtiene un resumen de la actividad del tablero para una semana específica.
+
+*   **Parámetros**:
+    *   `week` (query, requerido): Semana en formato `YYYY-WW` (ej. `2025-51`).
+*   **Respuesta de Ejemplo**:
+    ```json
+    {
+      "week": "2025-51",
+      "start_date": "2025-12-15",
+      "end_date": "2025-12-21",
+      "completed": {
+        "count": 1,
+        "items": [
+          {
+            "id": 10,
+            "title": "Finalizar pruebas de integración",
+            "responsible": "test@ejemplo.com",
+            "state": "Hecho"
+          }
+        ]
+      },
+      "overdue": { "count": 0, "items": [] },
+      "new": {
+        "count": 2,
+        "items": [
+          { "id": 12, "title": "Nueva tarea", "responsible": null, "state": "Por hacer" },
+          { "id": 11, "title": "Otra tarea", "responsible": "test@ejemplo.com", "state": "En proceso" }
+        ]
+      }
+    }
+    ```
+
+##### `GET /report/{board_id}/hours-by-user`
+
+Obtiene las horas totales y el número de tareas por usuario para una semana.
+
+*   **Parámetros**:
+    *   `week` (query, requerido): Semana en formato `YYYY-WW`.
+*   **Respuesta de Ejemplo**:
+    ```json
+    {
+      "week": "2025-51",
+      "start_date": "2025-12-15",
+      "end_date": "2025-12-21",
+      "data": [
+        {
+          "user_id": 1,
+          "user_email": "test@ejemplo.com",
+          "total_hours": 8.5,
+          "tasks_count": 3
+        }
+      ]
+    }
+    ```
+
+##### `GET /report/{board_id}/hours-by-card`
+
+Obtiene las horas totales por tarjeta para una semana, con detalles de la tarjeta.
+
+*   **Parámetros**:
+    *   `week` (query, requerido): Semana en formato `YYYY-WW`.
+    *   `order_desc` (query, opcional): `true` para ordenar por horas descendente (defecto), `false` para ascendente.
+*   **Respuesta de Ejemplo**:
+    ```json
+    {
+      "week": "2025-51",
+      "start_date": "2025-12-15",
+      "end_date": "2025-12-21",
+      "data": [
+        {
+          "card_id": 10,
+          "title": "Finalizar pruebas de integración",
+          "responsible": "test@ejemplo.com",
+          "state": "Hecho",
+          "total_hours": 5.0
+        },
+        {
+          "card_id": 11,
+          "title": "Otra tarea",
+          "responsible": "test@ejemplo.com",
+          "state": "En proceso",
+          "total_hours": 3.5
+        }
+      ]
+    }
+    ```
+
+#### Lógica y Consultas SQL
+
+*   **Cálculo de la Semana**:
+    *   **Frontend**: Utiliza un `input` de tipo `week` y funciones de `Date` para construir el formato `YYYY-Www`.
+    *   **Backend**: La función `week_str_to_range` en `app/services/date_utils.py` convierte el string `YYYY-WW` a un rango de fechas (lunes a domingo) usando `date.fromisocalendar`.
+*   **Consultas (SQLAlchemy)**:
+    *   **Resumen**: Se realizan tres consultas separadas sobre el modelo `Card` filtrando por `board_id` y el rango de fechas en `created_at` (para nuevas), `updated_at` (para completadas en lista "Hecho") y `due_date` (para vencidas fuera de "Hecho").
+    *   **Horas por Usuario**: Se agrupan los `Worklog` por `user_id`, sumando `hours` y contando los `card_id` distintos, todo dentro del rango de fechas.
+    *   **Horas por Tarjeta**: Se agrupan los `Worklog` por `card_id`, sumando las `hours` y uniendo con `Card` y `List` para obtener los detalles.
+
+#### Casos Límite Manejados
+
+*   **Semana sin datos**: Los endpoints devuelven contadores en `0` y listas `[]` vacías. El frontend muestra mensajes como "No hay datos".
+*   **Tareas sin responsable**: El campo `responsible` en las respuestas será `null`. El frontend lo muestra como 'N/A' o 'Sin responsable'.
+*   **Tarjetas sin horas**: Aparecerán en el informe "Horas por Tarjeta" con `total_hours` de `0.0`.
 
 ## 🤝 Contribuir
 

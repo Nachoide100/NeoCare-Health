@@ -3,6 +3,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Board from "./pages/Board";
 import MyHours from "./pages/MyHours";
+import Report from "./pages/Report";
 import ProtectedRoute from "./components/ProtectedRoute";
 import "./App.css";
 
@@ -28,6 +29,14 @@ function App() {
         element={
           <ProtectedRoute>
             <MyHours />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/report"
+        element={
+          <ProtectedRoute>
+            <Report />
           </ProtectedRoute>
         }
       />
