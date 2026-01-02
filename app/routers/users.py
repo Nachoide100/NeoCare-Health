@@ -1,7 +1,9 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.orm import Session
+from typing import List, Optional
+from datetime import date, timedelta
 
-from .. import database, models, schemas, security
+from app import database, models, schemas, security
 
 router = APIRouter(
     prefix="/users",
@@ -14,3 +16,49 @@ def read_users_me(current_user: models.User = Depends(security.get_current_user)
     Devuelve los datos del usuario que está actualmente autenticado.
     """
     return current_user
+
+@router.get("/me/worklogs", response_model=List[schemas.Worklog])
+def get_my_worklogs(
+    week: Optional[str] = Query(None, description="Semana en formato YYYY-WW (ej: 2025-01)"),
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(security.get_current_user)
+):
+    """
+    Obtiene los registros de horas del usuario actual.
+    Si se proporciona 'week', filtra por semana específica.
+    Si no se proporciona, devuelve las horas de la semana actual.
+    """
+    query = db.query(models.Worklog).filter(models.Worklog.user_id == current_user.id)
+    
+    if week:
+        # Parsear semana YYYY-WW
+        try:
+            year, week_num = map(int, week.split('-'))
+            # Calcular fecha de inicio de semana (lunes)
+            jan1 = date(year, 1, 1)
+            days_offset = (week_num - 1) * 7
+            week_start = jan1 + timedelta(days=days_offset - jan1.weekday())
+            week_end = week_start + timedelta(days=6)
+            
+            query = query.filter(
+                models.Worklog.date >= week_start,
+                models.Worklog.date <= week_end
+            )
+        except ValueError:
+            raise HTTPException(
+                status_code=400,
+                detail="Formato de semana inválido. Use YYYY-WW (ej: 2025-01)"
+            )
+    else:
+        # Semana actual por defecto
+        today = date.today()
+        week_start = today - timedelta(days=today.weekday())
+        week_end = week_start + timedelta(days=6)
+        
+        query = query.filter(
+            models.Worklog.date >= week_start,
+            models.Worklog.date <= week_end
+        )
+    
+    worklogs = query.order_by(models.Worklog.date.desc(), models.Worklog.created_at.desc()).all()
+    return worklogs

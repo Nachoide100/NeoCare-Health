@@ -5,8 +5,12 @@ __pycache__/
 *.pyc
 .env
 Archivos/
+<<<<<<< HEAD
 .tmp.driveupload/
 .tmp.drivedownload/
+=======
+.tmp-driveupload/
+>>>>>>> 730994f9d3d19fab09533aeb609e449d40b7a222
 
 # Frontend
 node_modules/

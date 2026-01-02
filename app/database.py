@@ -6,8 +6,8 @@ y la gestión de sesiones de SQLAlchemy.
 import os
 import psycopg2
 from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+# Use the modern import location for SQLAlchemy 2.x
+from sqlalchemy.orm import declarative_base, sessionmaker
 from dotenv import load_dotenv
 
 # Cargar variables de entorno
