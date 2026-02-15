@@ -52,6 +52,7 @@ class Card(Base):
     board = relationship("Board", back_populates="cards")
     user = relationship("User", back_populates="cards")
     worklogs = relationship("Worklog", back_populates="card", cascade="all, delete-orphan")
+    labels = relationship("Label", back_populates="card", cascade="all, delete")
 
 class Worklog(Base):
     __tablename__ = "worklogs"
@@ -65,3 +66,12 @@ class Worklog(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     card = relationship("Card", back_populates="worklogs")
     user = relationship("User", back_populates="worklogs")
+class Label(Base):
+    __tablename__ = "labels"
+
+    id = Column(Integer, primary_key=True, index=True)
+    card_id = Column(Integer, ForeignKey("cards.id", ondelete="CASCADE"))
+    name = Column(String(30), nullable=False)
+    color = Column(String(20), nullable=False)
+
+    card = relationship("Card", back_populates="labels")

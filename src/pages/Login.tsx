@@ -6,14 +6,22 @@ const Login: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
-  const navigate = useNavigate(); // 👈 Hook para redirigir
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const success = await login(email, password);
-    if (success) {
-      navigate("/board"); // 👈 Redirección automática
-    } else {
+
+    try {
+      const data = await login(email, password); // data = { access_token, token_type }
+
+      if (data?.access_token) {
+        localStorage.setItem("token", data.access_token); // Guarda el token
+        localStorage.setItem("user_id", data.user_id); // AÑADIR ESTO
+        navigate("/board"); // Redirige al tablero
+      } else {
+        setMessage("❌ Credenciales incorrectas. Intenta de nuevo.");
+      }
+    } catch (error) {
       setMessage("❌ Credenciales incorrectas. Intenta de nuevo.");
     }
   };
@@ -21,6 +29,7 @@ const Login: React.FC = () => {
   return (
     <div style={{ maxWidth: "400px", margin: "auto", padding: "2rem" }}>
       <h2>Login</h2>
+
       <form onSubmit={handleSubmit}>
         <div>
           <label>Email:</label>
@@ -31,6 +40,7 @@ const Login: React.FC = () => {
             required
           />
         </div>
+
         <div style={{ marginTop: "1rem" }}>
           <label>Password:</label>
           <input
@@ -40,6 +50,7 @@ const Login: React.FC = () => {
             required
           />
         </div>
+
         <button type="submit" style={{ marginTop: "1rem" }}>
           Entrar
         </button>
@@ -55,3 +66,6 @@ const Login: React.FC = () => {
 };
 
 export default Login;
+
+
+

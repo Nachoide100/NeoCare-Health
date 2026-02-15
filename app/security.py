@@ -6,7 +6,7 @@ import os
 from dotenv import load_dotenv
 
 from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import HTTPBearer
 from sqlalchemy.orm import Session
 from . import database, models
 
@@ -67,7 +67,7 @@ def decode_access_token(token: str):
 # -- DEPENDENCIAS DE SEGURIDAD --
 
 # Esquema de autenticación que le dice a FastAPI cómo encontrar el token en el header
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
+oauth2_scheme = HTTPBearer()
 
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(database.get_db)):
     """
@@ -88,7 +88,8 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         headers={"WWW-Authenticate": "Bearer"},
     )
 
-    payload = decode_access_token(token)
+    payload = decode_access_token(token.credentials)
+
     if payload is None:
         raise credentials_exception
     
