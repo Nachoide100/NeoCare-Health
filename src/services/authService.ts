@@ -2,17 +2,15 @@ const BASE_URL = import.meta.env.VITE_API_URL;
 
 export async function login(email: string, password: string) {
   try {
-    const formData = new URLSearchParams();
-    formData.append("username", email);
-    formData.append("password", password);
-    formData.append("grant_type", "password");
-
-    const response = await fetch(`${BASE_URL}/login`, {
+    const response = await fetch(`${BASE_URL}/auth/login-json`, {
       method: "POST",
       headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
+        "Content-Type": "application/json",
       },
-      body: formData.toString(),
+      body: JSON.stringify({
+        email,
+        password
+      }),
     });
 
     if (!response.ok) {
@@ -26,5 +24,6 @@ export async function login(email: string, password: string) {
     throw error;
   }
 }
+
 
 

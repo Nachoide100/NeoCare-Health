@@ -12,7 +12,9 @@ import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import ListColumn from "./ListColumn";
 import CardItem from "./CardItem";
 import CardForm from "./CardForm";
-import CardModal from "./CardModal"; // ⭐ IMPORTANTE
+import CardModal from "./CardModal";
+
+const API_URL = import.meta.env.VITE_API_URL;
 
 interface Card {
   id: number;
@@ -27,6 +29,7 @@ interface Card {
 interface List {
   id: number;
   title: string;
+  cards?: Card[];
 }
 
 const Board: React.FC = () => {
@@ -43,7 +46,6 @@ const Board: React.FC = () => {
   const [editHours, setEditHours] = useState("");
   const [editNote, setEditNote] = useState("");
 
-  const currentUserId = parseInt(localStorage.getItem("user_id") || "0");
   const boardId = 1;
 
   const sensors = useSensors(
@@ -53,28 +55,40 @@ const Board: React.FC = () => {
 
   useEffect(() => {
     fetchLists();
-    fetchCards();
   }, []);
 
   const fetchLists = async () => {
     const token = localStorage.getItem("token");
-    const res = await fetch(`http://localhost:8000/lists?board_id=${boardId}`, {
+    const res = await fetch(`${API_URL}/lists?board_id=${boardId}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
-    setLists(await res.json());
-  };
 
-  const fetchCards = async () => {
-    const token = localStorage.getItem("token");
-    const res = await fetch(`http://localhost:8000/cards?board_id=${boardId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    setCards(await res.json());
+    const data = await res.json();
+
+    setLists(data);
+
+    // Rellenamos el estado de cards a partir de las listas devueltas
+    if (Array.isArray(data)) {
+      const allCards: Card[] = data
+        .flatMap((l: any) => l.cards || [])
+        .map((c: any) => ({
+          id: c.id,
+          title: c.title,
+          description: c.description,
+          due_date: c.due_date,
+          list_id: c.list_id,
+          order: c.order,
+          labels: c.labels,
+        }));
+      setCards(allCards);
+    } else {
+      setCards([]);
+    }
   };
 
   const fetchWorklogs = async (cardId: number) => {
     const token = localStorage.getItem("token");
-    const res = await fetch(`http://localhost:8000/worklogs/card/${cardId}`, {
+    const res = await fetch(`${API_URL}/worklogs/card/${cardId}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     setWorklogs(await res.json());
@@ -84,18 +98,20 @@ const Board: React.FC = () => {
     if (!window.confirm("¿Eliminar este registro de horas?")) return;
 
     const token = localStorage.getItem("token");
-    await fetch(`http://localhost:8000/worklogs/${id}`, {
+    await fetch(`${API_URL}/worklogs/${id}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    fetchWorklogs(editingCard!.id);
+    if (editingCard) {
+      fetchWorklogs(editingCard.id);
+    }
   };
 
   const handleEditWorklog = async (id: number) => {
     const token = localStorage.getItem("token");
 
-    await fetch(`http://localhost:8000/worklogs/${id}`, {
+    await fetch(`${API_URL}/worklogs/${id}`, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
@@ -109,7 +125,9 @@ const Board: React.FC = () => {
     });
 
     setEditingWorklogId(null);
-    fetchWorklogs(editingCard!.id);
+    if (editingCard) {
+      fetchWorklogs(editingCard.id);
+    }
   };
 
   const handleDeleteCard = async (cardId: number) => {
@@ -117,12 +135,13 @@ const Board: React.FC = () => {
 
     const token = localStorage.getItem("token");
 
-    await fetch(`http://localhost:8000/cards/${cardId}`, {
+    await fetch(`${API_URL}/cards/${cardId}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    fetchCards();
+    // En lugar de fetchCards, recargamos listas (que traen las cards)
+    fetchLists();
   };
 
   const handleDragStart = (event: any) => {
@@ -237,7 +256,7 @@ const Board: React.FC = () => {
 
     try {
       const token = localStorage.getItem("token");
-      await fetch(`http://localhost:8000/cards/${activeId}/move`, {
+      await fetch(`${API_URL}/cards/${activeId}/move`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -249,6 +268,9 @@ const Board: React.FC = () => {
         }),
       });
     } catch {}
+
+    // Tras mover, recargamos listas para sincronizar con backend
+    fetchLists();
   };
 
   const handleEditCard = (id: number) => {
@@ -283,7 +305,7 @@ const Board: React.FC = () => {
             <ListColumn key={list.id} list={list}>
               <CardForm
                 onCreate={(cardData) =>
-                  fetch("http://localhost:8000/cards", {
+                  fetch(`${API_URL}/cards`, {
                     method: "POST",
                     headers: {
                       "Content-Type": "application/json",
@@ -294,7 +316,7 @@ const Board: React.FC = () => {
                       board_id: boardId,
                       list_id: list.id,
                     }),
-                  }).then(fetchCards)
+                  }).then(() => fetchLists())
                 }
               />
 
@@ -315,19 +337,12 @@ const Board: React.FC = () => {
         </div>
       </div>
 
-      {/*
-      ===========================================================
-      MODAL VIEJO — COPIA DE SEGURIDAD (NO BORRAR)
-      ===========================================================
-      (Aquí va TODO tu modal viejo completo, sin cortar)
-      */}
-
       {showEditModal && editingCard && (
         <CardModal
           card={editingCard}
           onClose={() => setShowEditModal(false)}
           refreshBoard={() => {
-            fetchCards();
+            fetchLists();
             fetchWorklogs(editingCard.id);
           }}
         />
@@ -355,5 +370,3 @@ const Board: React.FC = () => {
 };
 
 export default Board;
-
-               
