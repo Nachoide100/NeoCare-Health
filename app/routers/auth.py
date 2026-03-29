@@ -1,51 +1,113 @@
-"""
-Módulo de autenticación.
-Maneja el registro de usuarios, inicio de sesión y generación de tokens.
-"""
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
-from app import database, models, schemas, security
-from app.services.setup_service import create_default_lists
 
-router = APIRouter(prefix="/auth", tags=["Auth"])
+from app.database import get_db
+from app import models
+from app.models import Board, List
+from app.security import (
+    get_password_hash,
+    create_access_token,
+    verify_password
+)
 
-@router.post("/register", response_model=schemas.User)
-def register(user: schemas.UserCreate, db: Session = Depends(database.get_db)):
-    """
-    Registra un nuevo usuario y crea automáticamente su tablero principal y listas.
-    """
-    db_user = db.query(models.User).filter(models.User.email == user.email).first()
-    if db_user:
-        raise HTTPException(status_code=400, detail="El email ya está registrado")
+router = APIRouter(tags=["Auth"])
 
-    hashed_pwd = security.get_password_hash(user.password)
-    new_user = models.User(email=user.email, hashed_password=hashed_pwd)
+
+# ------------------------------------------------------------
+# LOGIN FORM-DATA (NO LO USA TU FRONTEND)
+# ------------------------------------------------------------
+@router.post("/login")
+def login(form_data: OAuth2PasswordRequestForm = Depends(),
+          db: Session = Depends(get_db)):
+
+    user = db.query(models.User).filter(
+        models.User.email == form_data.username
+    ).first()
+
+    if not user or not verify_password(form_data.password, user.hashed_password):
+        raise HTTPException(status_code=401, detail="Credenciales inválidas")
+
+    access_token = create_access_token(data={"sub": user.email})
+
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user_id": user.id
+    }
+
+
+# ------------------------------------------------------------
+# LOGIN JSON (EL QUE USA TU FRONTEND)
+# ------------------------------------------------------------
+@router.post("/login-json")
+def login_json(payload: dict, db: Session = Depends(get_db)):
+    email = payload.get("email")
+    password = payload.get("password")
+
+    if not email or not password:
+        raise HTTPException(status_code=400, detail="Faltan credenciales")
+
+    user = db.query(models.User).filter(
+        models.User.email == email
+    ).first()
+
+    if not user or not verify_password(password, user.hashed_password):
+        raise HTTPException(status_code=401, detail="Credenciales inválidas")
+
+    access_token = create_access_token(data={"sub": user.email})
+
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user_id": user.id
+    }
+
+
+# ------------------------------------------------------------
+# REGISTER (CREA TABLERO Y LISTAS POR DEFECTO)
+# ------------------------------------------------------------
+@router.post("/register")
+def register(email: str, password: str, db: Session = Depends(get_db)):
+
+    existing_user = db.query(models.User).filter(
+        models.User.email == email
+    ).first()
+
+    if existing_user:
+        raise HTTPException(status_code=400, detail="El usuario ya existe")
+
+    hashed_password = get_password_hash(password)
+    new_user = models.User(email=email, hashed_password=hashed_password)
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
 
     # Crear tablero por defecto
-    default_board = models.Board(title="Tablero Principal", owner_id=new_user.id)
+    default_board = Board(
+        name="Mi primer tablero",
+        user_id=new_user.id
+    )
     db.add(default_board)
     db.commit()
-
-    # IMPORTANTE: Refrescar para obtener el ID del tablero creado
     db.refresh(default_board)
 
-    # AUTOMATIZACIÓN: Crear listas por defecto para el nuevo tablero
-    create_default_lists(db, default_board.id)
+    # Crear listas por defecto
+    default_lists = [
+        List(name="Por hacer", order=0, board_id=default_board.id),
+        List(name="En curso", order=1, board_id=default_board.id),
+        List(name="Hecho", order=2, board_id=default_board.id),
+    ]
 
-    return new_user
+    db.add_all(default_lists)
+    db.commit()
 
-@router.post("/login", response_model=schemas.Token)
-def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(database.get_db)):
-    """
-    Verifica las credenciales y devuelve un token de acceso JWT.
-    """
-    user = db.query(models.User).filter(models.User.email == form_data.username).first()
-    if not user or not security.verify_password(form_data.password, user.hashed_password):
-        raise HTTPException(status_code=401, detail="Email o contraseña incorrectos")
+    access_token = create_access_token(data={"sub": new_user.email})
 
-    access_token = security.create_access_token(data={"sub": user.email})
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user_id": new_user.id
+    }
+
+
